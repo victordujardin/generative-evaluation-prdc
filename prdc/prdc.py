@@ -51,7 +51,7 @@ def compute_nearest_neighbour_distances(input_features, nearest_k):
     return radii
 
 
-def compute_prdc(real_features, fake_features, nearest_k):
+def compute_prdc(real_features, fake_features, nearest_k, weights = None):
     """
     Computes precision, recall, density, and coverage given two manifolds.
 
@@ -72,6 +72,12 @@ def compute_prdc(real_features, fake_features, nearest_k):
         fake_features, nearest_k)
     distance_real_fake = compute_pairwise_distance(
         real_features, fake_features)
+    
+    if weights is None:
+        weights = np.ones(real_features.shape[0], dtype=np.float32)
+        weights /= weights.sum()
+
+
 
     precision = (
             distance_real_fake <
@@ -82,11 +88,12 @@ def compute_prdc(real_features, fake_features, nearest_k):
             distance_real_fake <
             np.expand_dims(fake_nearest_neighbour_distances, axis=0)
     ).any(axis=1).mean()
+    
 
-    density = (1. / float(nearest_k)) * (
-            distance_real_fake <
-            np.expand_dims(real_nearest_neighbour_distances, axis=1)
-    ).sum(axis=0).mean()
+    density = (1. / nearest_k) * (
+        weights[:, np.newaxis] * (distance_real_fake < 
+        np.expand_dims(real_nearest_neighbour_distances, axis=1)
+        ).astype(float)).sum()
 
     coverage = (
             distance_real_fake.min(axis=1) <
@@ -95,3 +102,7 @@ def compute_prdc(real_features, fake_features, nearest_k):
 
     return dict(precision=precision, recall=recall,
                 density=density, coverage=coverage)
+
+
+
+
