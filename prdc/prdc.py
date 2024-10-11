@@ -5,6 +5,7 @@ MIT license
 """
 import numpy as np
 import sklearn.metrics
+from sklearn.neighbors import NearestNeighbors
 
 __all__ = ['compute_prdc']
 
@@ -51,7 +52,7 @@ def compute_nearest_neighbour_distances(input_features, nearest_k):
     return radii
 
 
-def compute_prdc(real_features, fake_features, nearest_k, weights = None):
+def compute_prdc(real_features, fake_features, nearest_k, population_size, sample_size, weights = None):
     """
     Computes precision, recall, density, and coverage given two manifolds.
 
@@ -72,11 +73,12 @@ def compute_prdc(real_features, fake_features, nearest_k, weights = None):
         fake_features, nearest_k)
     distance_real_fake = compute_pairwise_distance(
         real_features, fake_features)
+    distance_real_real = compute_pairwise_distance(
+        real_features, real_features)
     
     if weights is None:
         weights = np.ones(real_features.shape[0], dtype=np.float32)
         weights /= weights.sum()
-
 
 
     precision = (
@@ -94,6 +96,47 @@ def compute_prdc(real_features, fake_features, nearest_k, weights = None):
         weights[:, np.newaxis] * (distance_real_fake < 
         np.expand_dims(real_nearest_neighbour_distances, axis=1)
         ).astype(float)).sum()
+    
+    
+
+    new_density  = 0
+    n_samples = real_features.shape[0]
+    N = np.sum(weights)
+
+    # Compute NDD_K(x_i): distance to the K-th nearest neighbor for each x_i
+    nbrs = NearestNeighbors(n_neighbors=nearest_k+1, algorithm='auto').fit(real_features)
+    distances, indices = nbrs.kneighbors(real_features)
+    NDD_K = distances[:, nearest_k]  # distances to K-th nearest neighbor
+
+    Density = 0.0
+
+    # Pre-build KD-Trees for efficient radius queries
+    tree_X = NearestNeighbors(algorithm='auto').fit(real_features)
+    tree_Y = NearestNeighbors(algorithm='auto').fit(fake_features)
+
+    for i in range(n_samples):
+        x_i = real_features[i]
+        w_i = weights[i]
+        radius = NDD_K[i]
+
+        # Compute S_i: Sum of weights of real data points within radius of x_i
+        ind_X_within_radius = tree_X.radius_neighbors([x_i], radius=radius, return_distance=False)[0]
+        S_i = np.sum(weights[ind_X_within_radius])
+
+        # Compute D_i: Sum over generated data points within radius of x_i
+        ind_Y_within_radius = tree_Y.radius_neighbors([x_i], radius=radius, return_distance=False)[0]
+        D_i = (w_i / N) * len(ind_Y_within_radius)
+
+        # Avoid division by zero
+        if S_i == 0:
+            continue
+
+        # Compute Density_i
+        Density_i = D_i / ((S_i / N) * n_samples)
+
+        new_density += Density_i
+    
+    
 
     coverage = (
             distance_real_fake.min(axis=1) <
@@ -101,7 +144,7 @@ def compute_prdc(real_features, fake_features, nearest_k, weights = None):
     ).mean()
 
     return dict(precision=precision, recall=recall,
-                density=density, coverage=coverage)
+                density=density, coverage=coverage, new_density = new_density)
 
 
 
