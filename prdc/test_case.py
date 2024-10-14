@@ -2,39 +2,48 @@
 import numpy as np
 from sklearn.preprocessing import normalize
 from prdc import compute_prdc
-
-# Example feature vectors for real and fake images (10,000 samples, 2048 features each)
-# Generate real and fake features from a normal distribution with mean 1 and std 1
-real_features = np.random.normal(loc=1, scale=1, size=(100, 2048)).astype(np.float32)
-fake_features = np.random.normal(loc=1, scale=1, size=(100, 2048)).astype(np.float32)
+import pandas as pd
 
 
-weigths = np.random.randint(1, 101, size=100)
+real_features = pd.read_csv("pred_original.csv")
+fake_features = pd.read_csv("pred_pred.csv")
 
 
-population_size = weigths.sum()
+# Keep only numeric columns
+real_features = real_features.select_dtypes(include=['number'])
+fake_features = fake_features.select_dtypes(include=['number'])
 
-weigths = weigths/population_size
+# Reset indices
+real_features = real_features.reset_index(drop=True)
+fake_features = fake_features.reset_index(drop=True)
 
+# Drop rows with NaN values
+real_features = real_features.dropna()
+fake_features = fake_features.dropna()
 
+# Align DataFrames by their indices
+min_length = min(len(real_features), len(fake_features))
+real_features = real_features.iloc[:min_length]
+fake_features = fake_features.iloc[:min_length]
 
-# Normalize the features
-real_features = normalize(real_features)
-fake_features = normalize(fake_features)
+# Update weights array
+weights = np.ones(min_length, dtype=np.float32)
+
 
 # Define nearest_k, usually set to a small number like 5
 nearest_k = 5
 
 # Compute PRDC metrics
-metrics = compute_prdc(real_features, fake_features, nearest_k, population_size=100, sample_size = 100, weights=None)
+metrics = compute_prdc(real_features, fake_features, nearest_k, population_size=100, sample_size = 100, weights=weights)
 
 # Display results
 print("PRDC Metrics:")
-print("Precision: {:.4f}".format(metrics['precision']))
-print("Recall: {:.4f}".format(metrics['recall']))
+# print("Precision: {:.4f}".format(metrics['precision']))
+# print("Recall: {:.4f}".format(metrics['recall']))
 print("Density_Naeem: {:.4f}".format(metrics['density_Naeem']))
 print("Density_Hugues: {:.4f}".format(metrics['density_Hugues']))
-print("Coverage: {:.4f}".format(metrics['coverage']))
+print("Weighted Density: {:.4f}".format(metrics['weighted_density']))
+# print("Coverage: {:.4f}".format(metrics['coverage']))
 
 
 

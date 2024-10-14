@@ -1,8 +1,3 @@
-"""
-prdc 
-Copyright (c) 2020-present NAVER Corp.
-MIT license
-"""
 import numpy as np
 import sklearn.metrics
 from sklearn.neighbors import NearestNeighbors
@@ -52,6 +47,9 @@ def compute_nearest_neighbour_distances(input_features, nearest_k):
     return radii
 
 
+
+
+
 def compute_prdc(real_features, fake_features, nearest_k, population_size, sample_size, weights = None):
     """
     Computes precision, recall, density, and coverage given two manifolds.
@@ -98,15 +96,12 @@ def compute_prdc(real_features, fake_features, nearest_k, population_size, sampl
             np.expand_dims(real_nearest_neighbour_distances, axis=1)
     ).sum(axis=0).mean()
 
-
     density_Hugues = (1. / (nearest_k * population_size)) * (
-        weights[:, np.newaxis] * (distance_real_fake < 
-        np.expand_dims(real_nearest_neighbour_distances, axis=1)
-        ).astype(float)).sum()
+        weights * (distance_real_fake < np.expand_dims(real_nearest_neighbour_distances, axis=1)).astype(float)).sum()
     
-
-    dummy_fake = np.where(distance_real_fake < np.expand_dims(real_nearest_neighbour_distances, axis=1), 1, 0)
-    dummy_true = np.where(distance_real_real < np.expand_dims(real_nearest_neighbour_distances, axis=1), 1, 0)
+    
+    indicator_fake = np.where(distance_real_fake < np.expand_dims(real_nearest_neighbour_distances, axis=1), 1, 0)
+    indicator_true = np.where(distance_real_real < np.expand_dims(real_nearest_neighbour_distances, axis=1), 1, 0)
 
 
     # density_update = 0
@@ -116,14 +111,16 @@ def compute_prdc(real_features, fake_features, nearest_k, population_size, sampl
     # density_update = density_update / sample_size
     # print("density : " + str(density_update))
 
+
+
     # Vectorized density update calculation
+    numerator = np.dot(weights, indicator_fake.T)
 
+    denominator = np.sum(weights * indicator_true, axis=1)
 
-    numerator = np.dot(weights, dummy_fake.T)
-    denominator = np.dot(weights, dummy_true.T) 
+    # denominator = np.dot(weights, indicator_true.T) #attention est-ce que je prends bien le poids associé aux x qui tombent dans la boule ?? et pas le poids du centre ? 
     density_update2 = np.sum(numerator / denominator / sample_size)
 
-    print("density vectorized : " + str(density_update2))
 
 
 
@@ -140,7 +137,7 @@ def compute_prdc(real_features, fake_features, nearest_k, population_size, sampl
     ).mean()
 
     return dict(precision=precision, recall=recall,
-                density_Hugues=density_Hugues, coverage=coverage, density_Naeem = density_Naeem)
+                density_Hugues=density_Hugues, coverage=coverage, density_Naeem = density_Naeem, weighted_density = density_update2)
 
 
 
