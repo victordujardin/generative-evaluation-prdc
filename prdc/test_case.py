@@ -43,7 +43,8 @@ print("PRDC Metrics:")
 print("Density_Naeem: {:.4f}".format(metrics['density_Naeem']))
 print("Density_Hugues: {:.4f}".format(metrics['density_Hugues']))
 print("Weighted Density: {:.4f}".format(metrics['weighted_density']))
-# print("Coverage: {:.4f}".format(metrics['coverage']))
+print("Coverage: {:.4f}".format(metrics['coverage']))
+print("Weighted Coverage: {:.4f}".format(metrics['weighted_coverage']))
 
 
 
