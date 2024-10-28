@@ -79,7 +79,12 @@ def compute_prdc(real_features, fake_features, nearest_k, population_size, sampl
 
 
     if weights_star is None:
-        weights_star = np.ones(fake_features.shape[0], dtype=np.float32)
+        weights_star = np.ones(fake_features.shape[0], dtype=np.float32) 
+
+    weights_star = weights_star * real_features.shape[0] / fake_features.shape[0]
+
+    weights = weights  / (weights.sum() / len(weights))
+
 
 
 
@@ -104,9 +109,6 @@ def compute_prdc(real_features, fake_features, nearest_k, population_size, sampl
 
 
 
-
-
-
     density_Hugues = (1. / float(nearest_k)) * (
         (distance_real_fake < np.expand_dims(real_nearest_neighbour_distances, axis=1)) * np.expand_dims(weights, axis=1)
     ).sum(axis=0).sum()
@@ -118,7 +120,10 @@ def compute_prdc(real_features, fake_features, nearest_k, population_size, sampl
     indicator_true = np.where(distance_real_real < np.expand_dims(real_nearest_neighbour_distances, axis=1), 1, 0)
 
 
+    
 
+
+    
     # Vectorized density update calculation
     numerator = (np.expand_dims(weights_star, axis=1) * indicator_fake.T).sum()
     denominator = (np.expand_dims(weights, axis=1) * indicator_true).sum()
@@ -149,7 +154,12 @@ def compute_prdc(real_features, fake_features, nearest_k, population_size, sampl
     minimal_distance_mask = distance_real_fake == np.expand_dims(distance_real_fake.min(axis=1), axis=1)
     # Combine both masks
     combined_mask = within_ball_mask & minimal_distance_mask
-    # Calculate the numerator using broadcasting
+
+    #converting to numpy array
+    weights = np.array(weights)
+    weights_star = np.array(weights_star)
+
+    # Perform the operation
     coverage_numerator = (weights[:, np.newaxis] * weights_star[np.newaxis, :] * combined_mask).sum()
     # Calculate the denominator
     coverage_denominator = weights.sum()
