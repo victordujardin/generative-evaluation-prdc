@@ -3,10 +3,11 @@ from scipy.special import expit  # Fonction sigmoïde
 import pandas as pd
 import matplotlib.pyplot as plt
 from prdc import compute_prdc
+from scipy.stats import wishart
 
 # 1. Générer des variables explicatives (par exemple, 1000 échantillons, 5 variables explicatives)
 np.random.seed(42)
-X = np.random.normal(0, 1, (1000, 5))
+X = np.random.normal(0, 1, (1200, 5))
 
 # 2. Définir les coefficients de la régression logistique (1 intercept + 5 coefficients)
 beta_0 = -0.5  # Intercept
@@ -25,10 +26,10 @@ p = expit(np.dot(X_with_intercept, beta))  # Fonction sigmoïde
 w = 1/p
 
 # 4. Générer la matrice aléatoire (5x32)
-matrice_aleatoire = np.ones((5, 32))
+matrice_aleatoire = np.random.randn(5, 32)
 
 # 5. Définir la matrice de covariance (par exemple, utiliser la matrice identité)
-covariance_matrix = np.identity(32)  # Covariance matrix de dimension 32x32
+covariance_matrix = wishart.rvs(df=32, scale=np.identity(32), size=1)   # Covariance matrix de dimension 32x32
 
 # 6. Initialiser une liste pour stocker les données générées pour chaque observation
 data_multivariees = []
@@ -85,7 +86,7 @@ K_lim = n -1
 
 for k in range(1, K_lim):
     # Assume compute_prdc is a function that returns a dictionary with the required metrics
-    metrics = compute_prdc(sampled_data.iloc[:, :-2], fake_multivariees_df, k, 10000, 100, sampled_data["w"])
+    metrics = compute_prdc(sampled_data.iloc[:, :-2], fake_multivariees_df, k, 1000, 100, sampled_data["w"])
     
     # Extract metrics from the dictionary
     precision = metrics['precision']

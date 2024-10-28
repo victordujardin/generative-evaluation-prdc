@@ -69,7 +69,7 @@ real_features = real_samples_df[['x', 'y']].to_numpy()
 fake_features = fake_samples_df[['x', 'y']].to_numpy()
 
 # Compute PRDC metrics
-metrics = compute_prdc(real_features, fake_features, nearest_k, population_size=100, sample_size = 100, weights=np.ones(7)/5)
+metrics = compute_prdc(real_features, fake_features, nearest_k, population_size=100, sample_size = 100)
 
 # Display results
 print("PRDC Metrics:")

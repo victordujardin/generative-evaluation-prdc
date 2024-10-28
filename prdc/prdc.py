@@ -1,6 +1,7 @@
 import numpy as np
 import sklearn.metrics
 from sklearn.neighbors import NearestNeighbors
+from sklearn.preprocessing import normalize
 
 __all__ = ['compute_prdc']
 
@@ -89,6 +90,7 @@ def compute_prdc(real_features, fake_features, nearest_k, population_size, sampl
 
 
 
+
     precision = (
             distance_real_fake <
             np.expand_dims(real_nearest_neighbour_distances, axis=1)
@@ -110,7 +112,7 @@ def compute_prdc(real_features, fake_features, nearest_k, population_size, sampl
 
 
     density_Hugues = (1. / float(nearest_k)) * (
-        (distance_real_fake < np.expand_dims(real_nearest_neighbour_distances, axis=1)) * np.expand_dims(weights, axis=1)
+        (distance_real_fake < np.expand_dims(real_nearest_neighbour_distances, axis=1)) * np.expand_dims(weights/weights.sum(), axis=1)
     ).sum(axis=0).sum()
 
 
@@ -122,14 +124,27 @@ def compute_prdc(real_features, fake_features, nearest_k, population_size, sampl
 
     
 
+    # new_numerator = (np.expand_dims(weights_star, axis=1) * indicator_fake.T).sum(axis = 0)
+    # new_denominator = (np.expand_dims(weights, axis=1) * indicator_true.T).sum(axis = 0)
 
-    
+
+
+
+
+
+
+
+
     # Vectorized density update calculation
     numerator = (np.expand_dims(weights_star, axis=1) * indicator_fake.T).sum()
-    denominator = (np.expand_dims(weights, axis=1) * indicator_true).sum()
+    denominator = (np.expand_dims(weights, axis=1) * indicator_true.T).sum()
 
 
-    density_update2 = numerator / denominator 
+
+    density_update2 = (numerator / denominator) 
+
+
+    #density_update2 = (new_numerator / new_denominator).mean()
 
 
 
