@@ -7,16 +7,22 @@ from scipy.stats import wishart
 
 # 1. Générer des variables explicatives (par exemple, 1000 échantillons, 5 variables explicatives)
 np.random.seed(42)
-X = np.random.normal(0, 1, (10000, 5))
-Y = np.random.normal(0, 1, (10000, 5))
+
+n = 200
+m = 10000
+
+
+
+X = np.random.normal(0, 1, (m, 5))
+Y = np.random.normal(0, 1, (m, 5))
 
 # 2. Définir les coefficients de la régression logistique (1 intercept + 5 coefficients)
 beta_0 = 0.0  # Intercept
-beta_1 = 10.0   # Coefficient de la première variable
-beta_2 = 20.0   # Coefficient de la deuxième variable
-beta_3 = 10.0   # Coefficient de la troisième variable
-beta_4 = -10.0  # Coefficient de la quatrième variable
-beta_5 = 10.0  # Coefficient de la cinquième variable
+beta_1 = 100.0   # Coefficient de la première variable
+beta_2 = 200.0   # Coefficient de la deuxième variable
+beta_3 = 100.0   # Coefficient de la troisième variable
+beta_4 = -100.0  # Coefficient de la quatrième variable
+beta_5 = 100.0  # Coefficient de la cinquième variable
 
 # Créer un tableau de coefficients (intercept + coefficients des 5 variables)
 beta = np.array([beta_0, beta_1, beta_2, beta_3, beta_4, beta_5])
@@ -86,7 +92,7 @@ data['p'] = p
 
 
 
-n = 100
+
 # Sample 100 rows based on the probability 'p'
 sampled_data = data.sample(n=n, weights='p', random_state=42)
 
@@ -105,7 +111,7 @@ K_lim = n - 1
 
 for k in range(1, K_lim):
     # Assume compute_prdc is a function that returns a dictionary with the required metrics
-    metrics = compute_prdc(sampled_data.iloc[:, :-2], fake_multi_df, k, 1000, 100, sampled_data["w"])
+    metrics = compute_prdc(sampled_data.iloc[:, :-2], fake_multi_df, k, sampled_data["w"])
     
     # Extract metrics from the dictionary
     precision = metrics['precision']
@@ -126,14 +132,16 @@ for k in range(1, K_lim):
     weighted_coverage_list.append(weighted_coverage)
     
     # Print the metrics for each iteration
+    print()
     print(f"Nearest neighbor {k}:")
+    print()
     # print(f"Precision: {precision}")
     # print(f"Recall: {recall}")
     # print(f"Density Hugues: {density_Hugues}")
-    # print(f"Density Naeem: {density_Naeem}")
-    # print(f"Weighted Density: {weighted_density}")
-    # print(f"Coverage: {coverage}")
-    # print(f"Weighted Coverage: {weighted_coverage}")
+    print(f"Density Naeem: {density_Naeem}")
+    print(f"Weighted Density: {weighted_density}")
+    print(f"Coverage: {coverage}")
+    print(f"Weighted Coverage: {weighted_coverage}")
     # print("-" * 30)
 
 
@@ -148,4 +156,16 @@ plt.title(f'Density Naeem and Weighted Density with respect to k, for n = {n} an
 plt.legend()
 plt.grid(True)
 # plt.show()
-plt.savefig("convergence_plot.png")
+plt.savefig("density_convergence_plot_same_dgp.png") 
+
+
+plt.figure(figsize=(10, 6))
+plt.plot(k_values, coverage_list, label='Coverage Naeem', marker='o')
+plt.plot(k_values, weighted_coverage_list, label='Weighted Coverage', marker='x')
+plt.xlabel('k')
+plt.ylabel('Density')
+plt.title(f'Coverage Naeem and Weighted Coverage with respect to k, for n = {n} and m = {m}')
+plt.legend()
+plt.grid(True)
+# plt.show()
+plt.savefig("coverage_convergence_plot_same_dgp.png") 

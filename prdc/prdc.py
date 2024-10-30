@@ -51,7 +51,7 @@ def compute_nearest_neighbour_distances(input_features, nearest_k):
 
 
 
-def compute_prdc(real_features, fake_features, nearest_k, population_size, sample_size, weights = None, weights_star = None):
+def compute_prdc(real_features, fake_features, nearest_k, weights = None, weights_star = None, Normalized = False):
     """
     Computes precision, recall, density, and coverage given two manifolds.
 
@@ -82,9 +82,12 @@ def compute_prdc(real_features, fake_features, nearest_k, population_size, sampl
     if weights_star is None:
         weights_star = np.ones(fake_features.shape[0], dtype=np.float32) 
 
-    weights_star = weights_star * real_features.shape[0] / fake_features.shape[0]
 
-    weights = weights  / (weights.sum() / len(weights))
+    if not Normalized: 
+
+        weights_star = weights_star * real_features.shape[0] / fake_features.shape[0]
+
+        weights = weights  / (weights.sum() / len(weights))
 
 
 
@@ -122,19 +125,6 @@ def compute_prdc(real_features, fake_features, nearest_k, population_size, sampl
     indicator_true = np.where(distance_real_real < np.expand_dims(real_nearest_neighbour_distances, axis=1), 1, 0)
 
 
-    
-
-    # new_numerator = (np.expand_dims(weights_star, axis=1) * indicator_fake.T).sum(axis = 0)
-    # new_denominator = (np.expand_dims(weights, axis=1) * indicator_true.T).sum(axis = 0)
-
-
-
-
-
-
-
-
-
     # Vectorized density update calculation
     numerator = (np.expand_dims(weights_star, axis=1) * indicator_fake.T).sum()
     denominator = (np.expand_dims(weights, axis=1) * indicator_true.T).sum()
@@ -144,7 +134,7 @@ def compute_prdc(real_features, fake_features, nearest_k, population_size, sampl
     density_update2 = (numerator / denominator) 
 
 
-    #density_update2 = (new_numerator / new_denominator).mean()
+
 
 
 
@@ -175,11 +165,11 @@ def compute_prdc(real_features, fake_features, nearest_k, population_size, sampl
     weights_star = np.array(weights_star)
 
     # Perform the operation
-    coverage_numerator = (weights[:, np.newaxis] * weights_star[np.newaxis, :] * combined_mask).sum()
-    # Calculate the denominator
+    coverage_numerator = (weights[:, np.newaxis] * combined_mask).sum()
+    # # Calculate the denominator
     coverage_denominator = weights.sum()
     # Calculate the coverage
-    weighted_coverage = coverage_numerator / coverage_denominator
+    weighted_coverage = coverage_numerator  / coverage_denominator
 
 
 
