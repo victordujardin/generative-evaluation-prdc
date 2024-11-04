@@ -5,24 +5,24 @@ import matplotlib.pyplot as plt
 from prdc import compute_prdc
 from scipy.stats import wishart
 
-# 1. Générer des variables explicatives (par exemple, 1000 échantillons, 5 variables explicatives)
+# 1. Générer des variables explicatives 
 np.random.seed(42)
 
-n = 200
-m = 10000
+n = 800
+m = 2000
 
+lowrank = 5
 
-
-X = np.random.normal(0, 1, (m, 5))
-Y = np.random.normal(0, 1, (m, 5))
+X = np.random.normal(0, 1, (m, lowrank))
+Y = np.random.normal(0, 1, (m, lowrank))
 
 # 2. Définir les coefficients de la régression logistique (1 intercept + 5 coefficients)
 beta_0 = 0.0  # Intercept
-beta_1 = 100.0   # Coefficient de la première variable
-beta_2 = 200.0   # Coefficient de la deuxième variable
-beta_3 = 100.0   # Coefficient de la troisième variable
-beta_4 = -100.0  # Coefficient de la quatrième variable
-beta_5 = 100.0  # Coefficient de la cinquième variable
+beta_1 = 5.0   # Coefficient de la première variable
+beta_2 = -5.0   # Coefficient de la deuxième variable
+beta_3 = -5.0   # Coefficient de la troisième variable
+beta_4 = -5.0  # Coefficient de la quatrième variable
+beta_5 = 5.0  # Coefficient de la cinquième variable
 
 # Créer un tableau de coefficients (intercept + coefficients des 5 variables)
 beta = np.array([beta_0, beta_1, beta_2, beta_3, beta_4, beta_5])
@@ -32,14 +32,23 @@ X_with_intercept = np.column_stack([np.ones(X.shape[0]), X])  # Ajout d'une colo
 Y_with_intercept = np.column_stack([np.ones(Y.shape[0]), Y])  # Ajout d'une colonne de 1 pour l'interception
 p = expit(np.dot(X_with_intercept, beta))  # Fonction sigmoïde
 p_star = expit(np.dot(Y_with_intercept, beta))  # Fonction sigmoïde
-w = 1/p
-w_star = 1/p_star
+w = 1/p 
+w_star = 1/p_star 
+
+datatest = pd.DataFrame(X)
+datatest['p'] = p
+sampletest = datatest.sample(n=n, weights='p', random_state=42)
+
+
+plt.figure(figsize=(6, 4))
+plt.scatter(sampletest.iloc[:, 0], sampletest.iloc[:, 1], color='blue', s=10)  # 's' sets the size of the dots
+# plt.show()
 
 # 4. Générer la matrice aléatoire (5x32)
-matrice_aleatoire =  np.random.randn(5, 32)
+matrice_aleatoire =  np.random.randn(lowrank, 32)
 
-# 5. Définir la matrice de covariance (par exemple, utiliser la matrice identité)
-covariance_matrix = np.dot(np.dot(matrice_aleatoire.T, np.cov(X, rowvar=False)), matrice_aleatoire) #wishart.rvs(df=32, scale=np.identity(32), size=1)   # Covariance matrix de dimension 32x32
+# 5. Définir la matrice de covariance 
+covariance_matrix = np.dot(np.dot(matrice_aleatoire.T, np.cov(X, rowvar=False)), matrice_aleatoire) 
 covariance_matrix_fake = np.dot(np.dot(matrice_aleatoire.T, np.cov(Y, rowvar=False)), matrice_aleatoire) 
 # 6. Initialiser une liste pour stocker les données générées pour chaque observation
 data_multi = []
@@ -68,14 +77,14 @@ for i in range(X.shape[0]):
     generated_data = np.random.multivariate_normal(mean_observation, covariance_matrix)
     fake_data = np.random.multivariate_normal(mean_observation_fake, covariance_matrix_fake)
 
-    lambda_exp = np.exp(abs(np.dot(X[i], np.array([0.2, -0.1, 0.4, -0.3, 0.1]))))
-    lambda_exp_fake = np.exp(abs(np.dot(Y[i], np.array([0.2, -0.1, 0.4, -0.3, 0.1]))))
+    lambda_exp = np.exp(abs(np.dot(X[i], np.array([0.2, -0.1, 0.4, -0.3, 0.1])))) #, 0.4, -0.3, 0.1
+    lambda_exp_fake = np.exp(abs(np.dot(Y[i], np.array([0.2, -0.1, 0.4, -0.3, 0.1]))))#, 0.4, -0.3, 0.1
 
 
 
     # Ajouter les données générées à la liste
-    data_multi.append(list(generated_data) + list(np.random.poisson(para_poisson, 100)) + list(np.random.multinomial(1, multinomial_probs)) + [np.random.exponential(lambda_exp)])
-    fake_multi.append(list(fake_data) + list(np.random.poisson(para_poisson_fake, 100)) + list(np.random.multinomial(1, multinomial_probs_fake))+ [np.random.exponential(lambda_exp_fake)])
+    data_multi.append(list(generated_data)+ list(np.random.poisson(para_poisson, 100)) + list(np.random.multinomial(1, multinomial_probs)) + [np.random.exponential(lambda_exp)])
+    fake_multi.append(list(fake_data)+ list(np.random.poisson(para_poisson_fake, 100)) + list(np.random.multinomial(1, multinomial_probs_fake))+ [np.random.exponential(lambda_exp_fake)])
 
 
 
@@ -97,6 +106,8 @@ data['p'] = p
 sampled_data = data.sample(n=n, weights='p', random_state=42)
 
 
+
+
 # Initialize empty lists for each metric
 precision_list = []
 recall_list = []
@@ -111,7 +122,7 @@ K_lim = n - 1
 
 for k in range(1, K_lim):
     # Assume compute_prdc is a function that returns a dictionary with the required metrics
-    metrics = compute_prdc(sampled_data.iloc[:, :-2], fake_multi_df, k, sampled_data["w"])
+    metrics = compute_prdc(sampled_data.iloc[:, :-2], fake_multi_df, k, sampled_data["w"], weights_star=None, normalized = False)
     
     # Extract metrics from the dictionary
     precision = metrics['precision']

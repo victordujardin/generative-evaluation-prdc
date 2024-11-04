@@ -3,6 +3,7 @@ from sklearn.preprocessing import normalize
 from prdc import compute_prdc
 import pandas as pd
 import matplotlib.pyplot as plt
+from scipy.special import expit  # Fonction sigmoïde
 
 
 
@@ -26,6 +27,22 @@ fake_samples = np.array([
     [5.0, 2.6]
     ], dtype=np.float32)
 
+
+beta_0 = 0.0  # Intercept
+beta_1 = -1.0   # Coefficient de la première variable
+beta_2 = 2.0   # Coefficient de la deuxième variable
+beta = np.array([beta_0, beta_1, beta_2])
+
+# 3. Calculer la probabilité à l'aide de la fonction logistique
+X_with_intercept = np.column_stack([np.ones(real_samples.shape[0]), real_samples])  # Ajout d'une colonne de 1 pour l'interception
+Y_with_intercept = np.column_stack([np.ones(fake_samples.shape[0]), fake_samples])  # Ajout d'une colonne de 1 pour l'interception
+p = expit(np.dot(X_with_intercept, beta))  # Fonction sigmoïde
+p_star = expit(np.dot(Y_with_intercept, beta))  # Fonction sigmoïde
+w = 1/p 
+w_star = 1/p_star 
+
+
+
 # Creating a DataFrame for the real and fake samples
 real_samples_df = pd.DataFrame(real_samples, columns=["x", "y"])
 fake_samples_df = pd.DataFrame(fake_samples, columns=["x", "y"])
@@ -41,11 +58,15 @@ samples_df = pd.concat([real_samples_df, fake_samples_df], ignore_index=True)
 
 plt.figure(figsize=(6, 6))
 
-# Plot real samples
-plt.scatter(real_samples[:, 0], real_samples[:, 1], color='purple', label='Real Samples', s=100, alpha=0.6)
+# Plot real samples and annotate with weights
+for i, (x, y) in enumerate(real_samples):
+    plt.scatter(x, y, color='purple', label='Real Samples' if i == 0 else "", s=100, alpha=0.6)
+    plt.annotate(f"{w[i]:.2f}", (x, y), textcoords="offset points", xytext=(0, 10), ha='center', fontsize=8)
 
-# Plot fake samples
-plt.scatter(fake_samples[:, 0], fake_samples[:, 1], color='green', label='Fake Samples', s=100)
+# Plot fake samples and annotate with weights
+for i, (x, y) in enumerate(fake_samples):
+    plt.scatter(x, y, color='green', label='Fake Samples' if i == 0 else "", s=100)
+    plt.annotate(f"{w_star[i]:.2f}", (x, y), textcoords="offset points", xytext=(0, 10), ha='center', fontsize=8)
 
 # Label the axes
 plt.xlabel("X")
@@ -69,7 +90,7 @@ real_features = real_samples_df[['x', 'y']].to_numpy()
 fake_features = fake_samples_df[['x', 'y']].to_numpy()
 
 # Compute PRDC metrics
-metrics = compute_prdc(real_features, fake_features, nearest_k, population_size=100, sample_size = 100)
+metrics = compute_prdc(real_features, fake_features, nearest_k, weights=w , weights_star=w_star)
 
 # Display results
 print("PRDC Metrics:")

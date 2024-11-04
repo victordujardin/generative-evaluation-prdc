@@ -51,7 +51,7 @@ def compute_nearest_neighbour_distances(input_features, nearest_k):
 
 
 
-def compute_prdc(real_features, fake_features, nearest_k, weights = None, weights_star = None, Normalized = False):
+def compute_prdc(real_features, fake_features, nearest_k, weights = None, weights_star = None, normalized = False):
     """
     Computes precision, recall, density, and coverage given two manifolds.
 
@@ -83,11 +83,13 @@ def compute_prdc(real_features, fake_features, nearest_k, weights = None, weight
         weights_star = np.ones(fake_features.shape[0], dtype=np.float32) 
 
 
-    if not Normalized: 
+    if not normalized: 
 
-        weights_star = weights_star * real_features.shape[0] / fake_features.shape[0]
+        weights_star = weights_star/ weights_star.sum()
 
-        weights = weights  / (weights.sum() / len(weights))
+        weights = weights  / weights.sum()
+
+
 
 
 
