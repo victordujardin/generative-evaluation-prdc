@@ -8,8 +8,8 @@ from scipy.stats import wishart
 # 1. Générer des variables explicatives 
 np.random.seed(42)
 
-n = 800
-m = 2000
+n = 200
+m = 1200
 
 lowrank = 5
 
@@ -86,7 +86,8 @@ for i in range(X.shape[0]):
     data_multi.append(list(generated_data)+ list(np.random.poisson(para_poisson, 100)) + list(np.random.multinomial(1, multinomial_probs)) + [np.random.exponential(lambda_exp)])
     fake_multi.append(list(fake_data)+ list(np.random.poisson(para_poisson_fake, 100)) + list(np.random.multinomial(1, multinomial_probs_fake))+ [np.random.exponential(lambda_exp_fake)])
 
-
+data_multi = X
+fake_multi = Y
 
 # Convertir la liste en DataFrame
 data_multi_df = pd.DataFrame(data_multi)
@@ -99,12 +100,16 @@ data = pd.DataFrame(data_multi_df)
 data['w'] = w
 data['p'] = p
 
+fakedata = pd.DataFrame(fake_multi_df)
+fakedata['w_star'] = w_star
+fakedata['p_star'] = p_star
+
 
 
 
 # Sample 100 rows based on the probability 'p'
-sampled_data = data.sample(n=n, weights='p', random_state=42)
-
+sampled_data = data.sample(n=n, weights='p', random_state=42) # bien sans remplacement, #écrire en tex de manière théorique.
+sampled_data_fake = fakedata.sample(n=n, weights='p_star', random_state=42) 
 
 
 
@@ -122,7 +127,7 @@ K_lim = n - 1
 
 for k in range(1, K_lim):
     # Assume compute_prdc is a function that returns a dictionary with the required metrics
-    metrics = compute_prdc(sampled_data.iloc[:, :-2], fake_multi_df, k, sampled_data["w"], weights_star=None, normalized = False)
+    metrics = compute_prdc(sampled_data.iloc[:, :-2], sampled_data_fake.iloc[: , :-2], k, sampled_data["w"], weights_star=sampled_data_fake["w_star"], normalized = False)
     
     # Extract metrics from the dictionary
     precision = metrics['precision']
@@ -131,6 +136,7 @@ for k in range(1, K_lim):
     coverage = metrics['coverage']
     density_Naeem = metrics['density_Naeem']
     weighted_density = metrics['weighted_density']
+    
     weighted_coverage = metrics['weighted_coverage']
     
     # Append each metric to its corresponding list
