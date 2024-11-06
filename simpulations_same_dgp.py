@@ -4,17 +4,20 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from prdc import compute_prdc
 from scipy.stats import wishart
+from sampling import sequential_weighted_sample
 
 # 1. Générer des variables explicatives 
 np.random.seed(42)
 
-n = 200
-m = 1200
+n = 400
+m = 1000
 
 lowrank = 5
 
-X = np.random.normal(0, 1, (m, lowrank))
-Y = np.random.normal(0, 1, (m, lowrank))
+
+
+X = np.random.multivariate_normal(np.zeros(lowrank), np.identity(lowrank), size = m)
+Y = np.random.multivariate_normal(np.zeros(lowrank), np.identity(lowrank), size = m)
 
 # 2. Définir les coefficients de la régression logistique (1 intercept + 5 coefficients)
 beta_0 = 0.0  # Intercept
@@ -136,7 +139,7 @@ for k in range(1, K_lim):
     coverage = metrics['coverage']
     density_Naeem = metrics['density_Naeem']
     weighted_density = metrics['weighted_density']
-    
+
     weighted_coverage = metrics['weighted_coverage']
     
     # Append each metric to its corresponding list

@@ -35,7 +35,7 @@ def get_kth_value(unsorted, k, axis=-1):
     return kth_values
 
 
-
+#does not work for the moment.
 def get_kth_value_with_weight_threshold(unsorted, weights, threshold, axis=-1):
     """
     Args:
@@ -88,7 +88,8 @@ def compute_nearest_neighbour_distances(input_features, nearest_k):
 ############ check that it works
 def compute_nearest_neighbour_distances_threshold(input_features, nearest_k_weight, weights):
     distances = compute_pairwise_distance(input_features)
-    radii = get_kth_value_with_weight_threshold(distances,weights=weights, threshold= nearest_k_weight + 1, axis = -1)
+    weights_matrix = np.repeat(weights[np.newaxis, :], distances.shape[0], axis=0)
+    radii = get_kth_value_with_weight_threshold(distances,weights=weights_matrix, threshold= nearest_k_weight + 1, axis = -1)
     return radii
 
 
