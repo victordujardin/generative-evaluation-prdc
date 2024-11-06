@@ -35,39 +35,6 @@ def get_kth_value(unsorted, k, axis=-1):
     return kth_values
 
 
-#does not work for the moment.
-def get_kth_value_with_weight_threshold(unsorted, weights, threshold, axis=-1):
-    """
-    Args:
-        unsorted: numpy.ndarray of any dimensionality.
-        weights: numpy.ndarray of the same shape as `unsorted`, representing weights associated with each value.
-        threshold: float, the maximum allowed sum of weights.
-        axis: int, the axis along which to perform the operation.
-    Returns:
-        kth values where the cumulative sum of the weights does not exceed the threshold.
-    """
-    # Sort the distances and get the indices of the sorted order
-    sorted_indices = np.argsort(unsorted, axis=axis)
-    sorted_values = np.take_along_axis(unsorted, sorted_indices, axis=axis)
-    
-    # Get the weights associated with the sorted distances (without sorting the weights themselves)
-    associated_weights = np.take_along_axis(weights, sorted_indices, axis=axis)
-    
-    # Compute the cumulative sum of the associated weights along the specified axis
-    cumulative_weights = np.cumsum(associated_weights, axis=axis)
-    
-    # Find the index where the cumulative sum of weights first exceeds the threshold
-    # We need the last index where the cumulative weight is still less than or equal to the threshold
-    valid_mask = cumulative_weights <= threshold
-    valid_indices = np.where(valid_mask, np.arange(valid_mask.shape[axis]), -1)
-    
-    # Get the last valid index where the cumulative weight is within the threshold
-    kth_indices = np.max(valid_indices, axis=axis)
-    
-    # Use the last valid index to get the k-th value from the sorted distances
-    kth_values = np.take_along_axis(sorted_values, np.expand_dims(kth_indices, axis=axis), axis=axis).squeeze()
-
-    return kth_values
 
 
 def compute_nearest_neighbour_distances(input_features, nearest_k):
@@ -83,20 +50,55 @@ def compute_nearest_neighbour_distances(input_features, nearest_k):
     return radii
 
 
+def compute_radius_with_weight_threshold(input_features, weights, threshold):
+    """
+    For each point in input_features, find the minimal radius such that the sum of weights
+    of neighbors within the radius does not exceed the threshold.
 
+    Args:
+        input_features: numpy.ndarray([N, feature_dim], dtype=np.float32)
+        weights: numpy.ndarray([N], dtype=np.float32)
+        threshold: float, maximum allowed sum of weights within the radius.
 
-############ check that it works
-def compute_nearest_neighbour_distances_threshold(input_features, nearest_k_weight, weights):
-    distances = compute_pairwise_distance(input_features)
-    weights_matrix = np.repeat(weights[np.newaxis, :], distances.shape[0], axis=0)
-    radii = get_kth_value_with_weight_threshold(distances,weights=weights_matrix, threshold= nearest_k_weight + 1, axis = -1)
+    Returns:
+        radii: numpy.ndarray([N], dtype=np.float32)
+    """
+    # Initialize NearestNeighbors to find all neighbors sorted by distance
+    nbrs = NearestNeighbors(n_neighbors=input_features.shape[0], algorithm='auto', metric='euclidean').fit(input_features)
+    distances, indices = nbrs.kneighbors(input_features)
+    
+    # Sort the weights according to the sorted neighbor indices
+    weights = np.array(weights)
+    sorted_weights = weights[indices]  # shape [N, N]
+    
+    # Compute the cumulative sum of weights for each point
+    cumulative_weights = np.cumsum(sorted_weights, axis=1)
+    
+    # Create a mask where cumulative sum exceeds the threshold
+    exceed_mask = cumulative_weights > threshold
+    
+    # Initialize radii to the maximum distance
+    radii = distances[:, -1]
+    
+    # Identify points where the threshold is exceeded
+    rows_with_exceed = np.any(exceed_mask, axis=1)
+    
+    if np.any(rows_with_exceed):
+        # For these points, find the first index where the threshold is exceeded
+        first_exceed_indices = np.argmax(exceed_mask[rows_with_exceed], axis=1)
+        
+        # Set the radius to the distance at the exceed index
+        radii[rows_with_exceed] = distances[rows_with_exceed, first_exceed_indices]
+    
     return radii
 
 
 
 
 
-def compute_prdc(real_features, fake_features, nearest_k, weights = None, weights_star = None, normalized = False):
+
+
+def compute_prdc(real_features, fake_features, nearest_k, weights = None, weights_star = None, normalized = False, weight_threshold = None):
     """
     Computes precision, recall, density, and coverage given two manifolds.
 
@@ -108,17 +110,20 @@ def compute_prdc(real_features, fake_features, nearest_k, weights = None, weight
         dict of precision, recall, density, and coverage.
     """
 
-    print('Num real: {} Num fake: {}'
-          .format(real_features.shape[0], fake_features.shape[0]))
+    # print('Num real: {} Num fake: {}'
+    #       .format(real_features.shape[0], fake_features.shape[0]))
 
     real_nearest_neighbour_distances = compute_nearest_neighbour_distances(
         real_features, nearest_k)
     fake_nearest_neighbour_distances = compute_nearest_neighbour_distances(
         fake_features, nearest_k)
-    # real_nearest_neighbour_distances_with_threshold = compute_nearest_neighbour_distances_threshold(
-    #     real_features, nearest_k, weights=weights)
-    # fake_nearest_neighbour_distances_with_threshold = compute_nearest_neighbour_distances_threshold(
-    #     fake_features, nearest_k, weights = weights_star)
+    # Compute dynamic radii based on weight threshold, if threshold is provided
+    if weight_threshold is not None:
+        real_radii_weight = compute_radius_with_weight_threshold(real_features, weights, weight_threshold)
+        fake_radii_weight = compute_radius_with_weight_threshold(fake_features, weights_star, weight_threshold)
+    else:
+        real_radii_weight = None
+        fake_radii_weight = None
     distance_real_fake = compute_pairwise_distance(
         real_features, fake_features)
     distance_real_real = compute_pairwise_distance(
@@ -126,10 +131,14 @@ def compute_prdc(real_features, fake_features, nearest_k, weights = None, weight
     
     if weights is None:
         weights = np.ones(real_features.shape[0], dtype=np.float32)
+    else:
+        weights = np.asarray(weights, dtype=np.float32)
 
 
     if weights_star is None:
-        weights_star = np.ones(fake_features.shape[0], dtype=np.float32) 
+        weights_star = np.ones(fake_features.shape[0], dtype=np.float32)
+    else:
+        weights_star = np.asarray(weights_star, dtype=np.float32)
 
 
     if not normalized: 
@@ -184,7 +193,15 @@ def compute_prdc(real_features, fake_features, nearest_k, weights = None, weight
 
 
 
-
+    if weight_threshold is not None:
+        # Weighted Density
+        indicator_fake_weight = (distance_real_fake <= real_radii_weight[:, np.newaxis]).astype(np.float32)
+        indicator_true_weight = (distance_real_real < real_radii_weight[:, np.newaxis]).astype(np.float32)
+        
+        numerator_weight = (weights_star[:, np.newaxis] * indicator_fake_weight).sum()
+        denominator_weight = (weights[:, np.newaxis] * indicator_true_weight).sum()
+        density_update2_weight = numerator_weight / denominator_weight if denominator_weight != 0 else 0.0
+        
 
 
     # indicator_fake_thresh = np.where(distance_real_fake <= np.expand_dims(real_nearest_neighbour_distances_with_threshold, axis=1), 1, 0)
@@ -239,7 +256,7 @@ def compute_prdc(real_features, fake_features, nearest_k, weights = None, weight
 
 
     return dict(precision=precision, recall=recall,
-                density_Hugues=density_Hugues, coverage=coverage, density_Naeem = density_Naeem, weighted_density = density_update2, weighted_coverage = weighted_coverage)
+                density_Hugues=density_Hugues, coverage=coverage, density_Naeem = density_Naeem, weighted_density = density_update2,weighted_density_threshold =density_update2_weight ,weighted_coverage = weighted_coverage)
 
 
 
