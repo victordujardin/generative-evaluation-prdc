@@ -76,12 +76,14 @@ def compute_radius_with_weight_threshold(input_features, weights, threshold):
     
     # Create a mask where cumulative sum exceeds the threshold
     exceed_mask = cumulative_weights > threshold
+
     
     # Initialize radii to the maximum distance
     radii = distances[:, -1]
     
     # Identify points where the threshold is exceeded
     rows_with_exceed = np.any(exceed_mask, axis=1)
+
     
     if np.any(rows_with_exceed):
         # For these points, find the first index where the threshold is exceeded
@@ -89,7 +91,7 @@ def compute_radius_with_weight_threshold(input_features, weights, threshold):
         
         # Set the radius to the distance at the exceed index
         radii[rows_with_exceed] = distances[rows_with_exceed, first_exceed_indices]
-    
+
     return radii
 
 
@@ -196,7 +198,7 @@ def compute_prdc(real_features, fake_features, nearest_k, weights = None, weight
     if weight_threshold is not None:
         # Weighted Density
         indicator_fake_weight = (distance_real_fake <= real_radii_weight[:, np.newaxis]).astype(np.float32)
-        indicator_true_weight = (distance_real_real < real_radii_weight[:, np.newaxis]).astype(np.float32)
+        indicator_true_weight = (distance_real_real <= real_radii_weight[:, np.newaxis]).astype(np.float32)
         
         numerator_weight = (weights_star[:, np.newaxis] * indicator_fake_weight).sum()
         denominator_weight = (weights[:, np.newaxis] * indicator_true_weight).sum()
