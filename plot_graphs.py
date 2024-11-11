@@ -75,7 +75,7 @@ def plot_coverage_metrics(k_values, coverage_means, coverage_stds,
     plt.legend()
     plt.grid(True)
     plt.savefig(coverage_save_path, dpi=300, bbox_inches='tight')
-    plt.show()
+    # plt.show()
     
     # Plot Weighted Coverage
     plt.figure(figsize=(10, 6))
@@ -90,4 +90,4 @@ def plot_coverage_metrics(k_values, coverage_means, coverage_stds,
     plt.legend()
     plt.grid(True)
     plt.savefig(weighted_coverage_save_path, dpi=300, bbox_inches='tight')
-    plt.show()
+    # plt.show()

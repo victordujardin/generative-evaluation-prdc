@@ -5,15 +5,16 @@ import matplotlib.pyplot as plt
 from prdc import compute_prdc
 from scipy.stats import wishart
 from sampling import sequential_weighted_sample
+import plot_graphs
 
 # 1. Générer des variables explicatives 
 seed = 42
 np.random.seed(seed)
 
 
-m = 100
-n = 10
-num_runs  = 1000
+m = 1000
+n = 100
+num_runs  = 100
 K_lim = n - 1
 k_values = list(range(1, K_lim))
 density_Naeem_all = {k: [] for k in range(1, K_lim)}
@@ -177,7 +178,8 @@ for i in range(num_runs):
 
     for k in range(1, K_lim):
         # Assume compute_prdc is a function that returns a dictionary with the required metrics
-        metrics = compute_prdc(sampled_data.iloc[:, :-2], sampled_data_fake.iloc[: , :-2], k, weights=sampled_data["w"], weights_star=sampled_data_fake["w_star"], normalized = False, weight_threshold=k*sampled_data["w"].mean())
+        metrics = compute_prdc(sampled_data.iloc[:, :-2], sampled_data_fake.iloc[: , :-2], k, weights=sampled_data["w"], weights_star=sampled_data_fake["w_star"], normalized = False, weight_threshold=k*((sampled_data["w"]/(sampled_data["w"].sum())).mean()))
+        # metrics = compute_prdc(sampled_data.iloc[:, :-2], sampled_data_fake.iloc[: , :-2], k, weights=None, weights_star=None, normalized = False, weight_threshold=k /n)
         
         # Extract required metrics
         density_Naeem = metrics.get('density_Naeem', np.nan)
@@ -243,6 +245,19 @@ mse_weighted_density_threshold = [var + (mean-1)**2 for var, mean in zip(weighte
 density_naeem_stds = np.sqrt(density_naeem_vars)
 weighted_density_stds = np.sqrt(weighted_density_vars)
 weighted_density_threshold_stds = np.sqrt(weighted_density_threshold_vars)
+
+
+
+
+
+# Prepare coverage metrics
+coverage_means = [mean_coverage[k] for k in k_values]
+coverage_vars = [var_coverage[k] for k in k_values]
+coverage_stds = np.sqrt(coverage_vars)
+
+weighted_coverage_means = [mean_weighted_coverage[k] for k in k_values]
+weighted_coverage_vars = [var_weighted_coverage[k] for k in k_values]
+weighted_coverage_stds = np.sqrt(weighted_coverage_vars)
 
 # Now, call the plotting functions
 plot_graphs.plot_density_metrics(

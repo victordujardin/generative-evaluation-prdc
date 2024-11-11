@@ -77,7 +77,6 @@ def compute_radius_with_weight_threshold(input_features, weights, threshold):
     # Create a mask where cumulative sum exceeds the threshold
     exceed_mask = cumulative_weights > threshold
 
-    
     # Initialize radii to the maximum distance
     radii = distances[:, -1]
     
@@ -115,22 +114,8 @@ def compute_prdc(real_features, fake_features, nearest_k, weights = None, weight
     # print('Num real: {} Num fake: {}'
     #       .format(real_features.shape[0], fake_features.shape[0]))
 
-    real_nearest_neighbour_distances = compute_nearest_neighbour_distances(
-        real_features, nearest_k)
-    fake_nearest_neighbour_distances = compute_nearest_neighbour_distances(
-        fake_features, nearest_k)
-    # Compute dynamic radii based on weight threshold, if threshold is provided
-    if weight_threshold is not None:
-        real_radii_weight = compute_radius_with_weight_threshold(real_features, weights, weight_threshold)
-        fake_radii_weight = compute_radius_with_weight_threshold(fake_features, weights_star, weight_threshold)
-    else:
-        real_radii_weight = None
-        fake_radii_weight = None
-    distance_real_fake = compute_pairwise_distance(
-        real_features, fake_features)
-    distance_real_real = compute_pairwise_distance(
-        real_features, real_features)
-    
+
+
     if weights is None:
         weights = np.ones(real_features.shape[0], dtype=np.float32)
     else:
@@ -148,6 +133,24 @@ def compute_prdc(real_features, fake_features, nearest_k, weights = None, weight
         weights_star = weights_star/ weights_star.sum()
 
         weights = weights  / weights.sum()
+
+    real_nearest_neighbour_distances = compute_nearest_neighbour_distances(
+        real_features, nearest_k)
+    fake_nearest_neighbour_distances = compute_nearest_neighbour_distances(
+        fake_features, nearest_k)
+    # Compute dynamic radii based on weight threshold, if threshold is provided
+    if weight_threshold is not None:
+        real_radii_weight = compute_radius_with_weight_threshold(real_features, weights, weight_threshold)
+        fake_radii_weight = compute_radius_with_weight_threshold(fake_features, weights_star, weight_threshold)
+    else:
+        real_radii_weight = None
+        fake_radii_weight = None
+    distance_real_fake = compute_pairwise_distance(
+        real_features, fake_features)
+    distance_real_real = compute_pairwise_distance(
+        real_features, real_features)
+    
+
 
 
 
@@ -199,7 +202,6 @@ def compute_prdc(real_features, fake_features, nearest_k, weights = None, weight
         # Weighted Density
         indicator_fake_weight = (distance_real_fake <= real_radii_weight[:, np.newaxis]).astype(np.float32)
         indicator_true_weight = (distance_real_real <= real_radii_weight[:, np.newaxis]).astype(np.float32)
-        
         numerator_weight = (weights_star[:, np.newaxis] * indicator_fake_weight).sum()
         denominator_weight = (weights[:, np.newaxis] * indicator_true_weight).sum()
         density_update2_weight = numerator_weight / denominator_weight if denominator_weight != 0 else 0.0
