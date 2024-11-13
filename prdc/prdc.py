@@ -202,8 +202,8 @@ def compute_prdc(real_features, fake_features, nearest_k, weights = None, weight
         # Weighted Density
         indicator_fake_weight = (distance_real_fake <= real_radii_weight[:, np.newaxis]).astype(np.float32)
         indicator_true_weight = (distance_real_real <= real_radii_weight[:, np.newaxis]).astype(np.float32)
-        numerator_weight = (weights_star[:, np.newaxis] * indicator_fake_weight).sum()
-        denominator_weight = (weights[:, np.newaxis] * indicator_true_weight).sum()
+        numerator_weight = (weights_star[ np.newaxis, : ] * indicator_fake_weight).sum()
+        denominator_weight = (weights[np.newaxis, :] * indicator_true_weight).sum()
         density_update2_weight = numerator_weight / denominator_weight if denominator_weight != 0 else 0.0
         
 
