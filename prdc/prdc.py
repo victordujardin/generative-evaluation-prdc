@@ -23,6 +23,7 @@ def compute_pairwise_distance(data_x, data_y=None):
 
 def get_kth_value(unsorted, k, axis=-1):
     """
+
     Args:
         unsorted: numpy.ndarray of any dimensionality.
         k: int
@@ -88,6 +89,14 @@ def compute_radius_with_weight_threshold(input_features, weights, threshold):
         # For these points, find the first index where the threshold is exceeded
         first_exceed_indices = np.argmax(exceed_mask[rows_with_exceed], axis=1)
         
+
+
+
+
+
+
+
+
         # Set the radius to the distance at the exceed index
         radii[rows_with_exceed] = distances[rows_with_exceed, first_exceed_indices]
 
@@ -141,15 +150,17 @@ def compute_prdc(real_features, fake_features, nearest_k, weights = None, weight
     # Compute dynamic radii based on weight threshold, if threshold is provided
     if weight_threshold is not None:
         real_radii_weight = compute_radius_with_weight_threshold(real_features, weights, weight_threshold)
-        fake_radii_weight = compute_radius_with_weight_threshold(fake_features, weights_star, weight_threshold)
+        # fake_radii_weight = compute_radius_with_weight_threshold(fake_features, weights_star, weight_threshold)
     else:
         real_radii_weight = None
-        fake_radii_weight = None
+        # fake_radii_weight = None
     distance_real_fake = compute_pairwise_distance(
         real_features, fake_features)
     distance_real_real = compute_pairwise_distance(
         real_features, real_features)
     
+
+
 
 
 

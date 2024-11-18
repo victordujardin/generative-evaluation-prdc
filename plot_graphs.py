@@ -4,7 +4,7 @@ import numpy as np
 def plot_density_metrics(k_values, density_naeem_means, density_naeem_stds,
                          weighted_density_means, weighted_density_stds,
                          weighted_density_threshold_means, weighted_density_threshold_stds,
-                         num_runs, save_path="density_comparison_mean_variance.png"):
+                         num_runs, n , m, ndatasets, lowrank, save_path="density_comparison_mean_variance.png"):
     plt.figure(figsize=(14, 10))
     
     # Plot Mean Density Naeem with variance
@@ -12,26 +12,26 @@ def plot_density_metrics(k_values, density_naeem_means, density_naeem_stds,
     plt.fill_between(k_values,
                      np.array(density_naeem_means) - density_naeem_stds,
                      np.array(density_naeem_means) + density_naeem_stds,
-                     color='blue', alpha=0.2, label='Variance Density Naeem')
+                     color='blue', alpha=0.2, label='standard deviation Density Naeem')
     
     # Plot Mean Weighted Density with variance
     plt.plot(k_values, weighted_density_means, label='Mean Weighted Density', marker='x', color='red')
     plt.fill_between(k_values,
                      np.array(weighted_density_means) - weighted_density_stds,
                      np.array(weighted_density_means) + weighted_density_stds,
-                     color='red', alpha=0.2, label='Variance Weighted Density')
+                     color='red', alpha=0.2, label='standard deviation Weighted Density')
     
     # Plot Mean Weighted Density Threshold with variance
-    plt.plot(k_values, weighted_density_threshold_means, label='Mean Weighted Density Threshold', marker='s', color='green')
+    plt.plot(k_values, weighted_density_threshold_means, label='Mean homogenous Weighted Density', marker='s', color='green')
     plt.fill_between(k_values,
                      np.array(weighted_density_threshold_means) - weighted_density_threshold_stds,
                      np.array(weighted_density_threshold_means) + weighted_density_threshold_stds,
-                     color='green', alpha=0.2, label='Variance Weighted Density Threshold')
+                     color='green', alpha=0.2, label='standard deviation homogenous Weighted Density')
     
     # Customize the plot
     plt.xlabel('k (Number of Nearest Neighbors)', fontsize=14)
     plt.ylabel('Density Metrics', fontsize=14)
-    plt.title(f'Mean and Variance of Density Metrics across {num_runs} Run(s)', fontsize=16)
+    plt.title(f'Mean and Variance of Density Metrics across {num_runs} Run(s) n  = {n}, m  = {m}, for {ndatasets} datasets, lowrank = {lowrank}', fontsize=16)
     plt.legend(fontsize=12)
     plt.grid(True)
     plt.xticks(k_values)  # Ensure all k values are marked on the x-axis
@@ -46,7 +46,7 @@ def plot_mse_metrics(k_values, mse_density_naeem, mse_weighted_density, mse_weig
     plt.figure(figsize=(10, 6))
     plt.plot(k_values, mse_density_naeem, marker='o', linestyle='-', label='MSE Density Naeem')
     plt.plot(k_values, mse_weighted_density, marker='s', linestyle='-', label='MSE Weighted Density')
-    plt.plot(k_values, mse_weighted_density_threshold, marker='^', linestyle='-', label='MSE Weighted Density Threshold')
+    plt.plot(k_values, mse_weighted_density_threshold, marker='^', linestyle='-', label='MSE homogenous Weighted Density ')
     
     # Adding titles and labels
     plt.title('Mean Squared Error (MSE) for Each Metric vs k')

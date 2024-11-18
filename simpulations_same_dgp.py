@@ -4,9 +4,15 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from prdc import compute_prdc
 from scipy.stats import wishart
-from sampling import sequential_weighted_sample
 import plot_graphs
-import generate_dataset
+from generate_dataset import generate_real, generate_fake
+import time
+
+
+
+curr = time.time()
+
+
 
 # 1. Générer des variables explicatives 
 seed = 41
@@ -14,9 +20,9 @@ np.random.seed(seed)
 
 
 m = 1000
-n = 100
-num_runs  = 5
-num_runs_outer = 5
+n = 200
+num_runs  = 10
+num_runs_outer = 10  
 
 K_lim = n - 1
 k_values = list(range(1, K_lim))
@@ -26,7 +32,8 @@ weighted_density_threshold_all = {k: [] for k in range(1, K_lim)}
 coverage_all = {k: [] for k in range(1, K_lim)}
 weighted_coverage_all = {k: [] for k in range(1, K_lim)}
 
-lowrank = 10
+lowrank = 5
+
 
 
 
@@ -42,15 +49,18 @@ for iter in range(num_runs_outer):
 
     for i in range(num_runs):
 
+
+
         
 
 
-        fake_data = generate_fake(m=m)
+        Y, fake_data = generate_fake(m=m)
         
 
         for k in range(1, K_lim):
-            metrics = compute_prdc(sampled_data.drop(columns=['p', 'w']), Y, k, weights=sampled_data["w"], weights_star=None, normalized = False, weight_threshold=k*((sampled_data["w"]/(sampled_data["w"].sum())).mean()))
+
             # Assume compute_prdc is a function that returns a dictionary with the required metrics
+            metrics = compute_prdc(sampled_data.drop(columns=['p', 'w']), Y, k, weights=sampled_data["w"], weights_star=None, normalized = False, weight_threshold=k*((sampled_data["w"]/(sampled_data["w"].sum())).mean()))
             # metrics = compute_prdc(sampled_data.iloc[:, :-2], fakedata.iloc[: , :-2], k, weights=sampled_data["w"], weights_star=None, normalized = False, weight_threshold=k*((sampled_data["w"]/(sampled_data["w"].sum())).mean()))
             # metrics = compute_prdc(sampled_data.iloc[:, :-2], sampled_data_fake.iloc[: , :-2], k, weights=sampled_data["w"], weights_star=sampled_data_fake["w_star"], normalized = False, weight_threshold=k*((sampled_data["w"]/(sampled_data["w"].sum())).mean()))
             # metrics = compute_prdc(sampled_data.iloc[:, :-2], sampled_data_fake.iloc[: , :-2], k, weights=None, weights_star=None, normalized = False, weight_threshold=k /n)
@@ -70,7 +80,7 @@ for iter in range(num_runs_outer):
             weighted_coverage_all[k].append(weighted_coverage)
             weighted_density_threshold_all[k].append(weighted_density_threshold)
 
-        print(f"Run {i + 1} completed.\n")
+        print(f"Dataset number {iter + 1 } run {i + 1} completed.\n")
 
 
 
@@ -142,8 +152,12 @@ plot_graphs.plot_density_metrics(
     weighted_density_stds,
     weighted_density_threshold_means,
     weighted_density_threshold_stds,
-    num_runs,
-    save_path="density_comparison_mean_variance.png"
+    num_runs, 
+    n, 
+    m,
+    num_runs_outer,
+    lowrank,
+    save_path="figures/density_comparison_mean_variance_across_{num_runs}_Run(s)_n_=_{n},_m_=_{m},_for_{num_runs_outer}_datasets.png"
 )
 
 plot_graphs.plot_mse_metrics(
@@ -151,7 +165,7 @@ plot_graphs.plot_mse_metrics(
     mse_density_naeem,
     mse_weighted_density,
     mse_weighted_density_threshold,
-    save_path="MSEs_for_densities.png"
+    save_path="figures/MSEs_for_densities.png"
 )
 
 plot_graphs.plot_coverage_metrics(
@@ -161,6 +175,6 @@ plot_graphs.plot_coverage_metrics(
     weighted_coverage_means,
     weighted_coverage_stds,
     num_runs,
-    coverage_save_path="coverage_naeem_mean_variance.png",
-    weighted_coverage_save_path="weighted_coverage_mean_variance.png"
+    coverage_save_path="figures/coverage_naeem_mean_variance.png",
+    weighted_coverage_save_path="figures/weighted_coverage_mean_variance.png"
 )

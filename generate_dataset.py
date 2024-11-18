@@ -10,9 +10,8 @@ def generate_real(m=1000, lowrank=10, seed=41):
     X = pd.DataFrame(X, columns=[f'X_{j}' for j in range(lowrank)])
 
     # Define coefficients
-    beta = np.array([0.0, 5.0, -5.0, -5.0, -5.0, 5.0, 5.0, -5.0, -5.0, -5.0, 5.0])
-    X_with_intercept = np.column_stack([np.ones(X.shape[0]), X])
-    p = expit(np.dot(X_with_intercept, beta))
+    beta = np.random.uniform(-5, 5, size=lowrank)
+    p = expit(np.dot(X, beta))
     w = 1 / p
 
     # Data augmentation with additional columns
@@ -46,6 +45,9 @@ def generate_real(m=1000, lowrank=10, seed=41):
 
     X['w'] = w
     X['p'] = p
+
+    data_multi['w'] = w
+    data_multi['p'] = p
     return X, data_multi
 
 def generate_fake(m=1000, lowrank=10):
@@ -87,4 +89,4 @@ def generate_fake(m=1000, lowrank=10):
 
     fake_multi['w_star'] = w_star
     fake_multi['p_star'] = p_star
-    return fake_multi
+    return Y, fake_multi
