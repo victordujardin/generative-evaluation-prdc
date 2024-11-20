@@ -15,14 +15,15 @@ curr = time.time()
 
 
 # 1. Générer des variables explicatives 
-seed = 41
-np.random.seed(seed)
+# seed = 41
+# np.random.seed(seed)
 
 
 m = 1000
-n = 200
-num_runs  = 10
-num_runs_outer = 10  
+n = 500
+num_runs  = 1
+num_runs_outer = 100
+
 
 K_lim = n - 1
 k_values = list(range(1, K_lim))
@@ -39,9 +40,12 @@ lowrank = 5
 
 
 for iter in range(num_runs_outer):
+    # dynamic_seed = seed + iter
+    # np.random.seed(dynamic_seed)
 
-    real_X, data_multi = generate_real(m=m)
-    sampled_data = real_X.sample(n=n, weights='p', random_state=seed)
+
+    real_X, data_multi = generate_real(m=m, lowrank=lowrank)
+    sampled_data = real_X.sample(n=n, weights='p') #, random_state=seed)
 
     
 
@@ -49,18 +53,18 @@ for iter in range(num_runs_outer):
 
     for i in range(num_runs):
 
+        # sub_seed = dynamic_seed + i 
+        # np.random.seed(sub_seed)
 
 
-        
 
-
-        Y, fake_data = generate_fake(m=m)
-        
+        Y, fake_data = generate_fake(m=m, lowrank = lowrank)
+        sampled_data_fake = Y.sample(n=n) #, weights='p_star')
 
         for k in range(1, K_lim):
 
             # Assume compute_prdc is a function that returns a dictionary with the required metrics
-            metrics = compute_prdc(sampled_data.drop(columns=['p', 'w']), Y, k, weights=sampled_data["w"], weights_star=None, normalized = False, weight_threshold=k*((sampled_data["w"]/(sampled_data["w"].sum())).mean()))
+            metrics = compute_prdc(sampled_data.drop(columns=['p', 'w']), sampled_data_fake.drop(columns=['p_star', 'w_star']), k, weights=sampled_data["w"], weights_star=None, normalized = False, weight_threshold=k*((sampled_data["w"]/(sampled_data["w"].sum())).mean()))
             # metrics = compute_prdc(sampled_data.iloc[:, :-2], fakedata.iloc[: , :-2], k, weights=sampled_data["w"], weights_star=None, normalized = False, weight_threshold=k*((sampled_data["w"]/(sampled_data["w"].sum())).mean()))
             # metrics = compute_prdc(sampled_data.iloc[:, :-2], sampled_data_fake.iloc[: , :-2], k, weights=sampled_data["w"], weights_star=sampled_data_fake["w_star"], normalized = False, weight_threshold=k*((sampled_data["w"]/(sampled_data["w"].sum())).mean()))
             # metrics = compute_prdc(sampled_data.iloc[:, :-2], sampled_data_fake.iloc[: , :-2], k, weights=None, weights_star=None, normalized = False, weight_threshold=k /n)
@@ -79,6 +83,7 @@ for iter in range(num_runs_outer):
             coverage_all[k].append(coverage)
             weighted_coverage_all[k].append(weighted_coverage)
             weighted_density_threshold_all[k].append(weighted_density_threshold)
+
 
         print(f"Dataset number {iter + 1 } run {i + 1} completed.\n")
 
@@ -157,7 +162,7 @@ plot_graphs.plot_density_metrics(
     m,
     num_runs_outer,
     lowrank,
-    save_path="figures/density_comparison_mean_variance_across_{num_runs}_Run(s)_n_=_{n},_m_=_{m},_for_{num_runs_outer}_datasets.png"
+    save_path=f"generative-evaluation-prdc/figures/density_comparison_mean_variance_across_{num_runs}_Run(s)_n_=_{n},_m_=_{m},_for_{num_runs_outer}_datasets.png"
 )
 
 plot_graphs.plot_mse_metrics(
@@ -165,7 +170,7 @@ plot_graphs.plot_mse_metrics(
     mse_density_naeem,
     mse_weighted_density,
     mse_weighted_density_threshold,
-    save_path="figures/MSEs_for_densities.png"
+    save_path="generative-evaluation-prdc/figures/MSEs_for_densities.png"
 )
 
 plot_graphs.plot_coverage_metrics(
@@ -175,6 +180,6 @@ plot_graphs.plot_coverage_metrics(
     weighted_coverage_means,
     weighted_coverage_stds,
     num_runs,
-    coverage_save_path="figures/coverage_naeem_mean_variance.png",
-    weighted_coverage_save_path="figures/weighted_coverage_mean_variance.png"
+    coverage_save_path="generative-evaluation-prdc/figures/coverage_naeem_mean_variance.png",
+    weighted_coverage_save_path="generative-evaluation-prdc/figures/weighted_coverage_mean_variance.png"
 )

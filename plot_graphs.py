@@ -4,7 +4,7 @@ import numpy as np
 def plot_density_metrics(k_values, density_naeem_means, density_naeem_stds,
                          weighted_density_means, weighted_density_stds,
                          weighted_density_threshold_means, weighted_density_threshold_stds,
-                         num_runs, n , m, ndatasets, lowrank, save_path="density_comparison_mean_variance.png"):
+                         num_runs, n , m, ndatasets, lowrank, save_path="figures/density_comparison_mean_variance.png"):
     plt.figure(figsize=(14, 10))
     
     # Plot Mean Density Naeem with variance
@@ -42,7 +42,7 @@ def plot_density_metrics(k_values, density_naeem_means, density_naeem_stds,
     # Display the plot
     plt.show()
 
-def plot_mse_metrics(k_values, mse_density_naeem, mse_weighted_density, mse_weighted_density_threshold, save_path="MSEs_for_densities.png"):
+def plot_mse_metrics(k_values, mse_density_naeem, mse_weighted_density, mse_weighted_density_threshold, save_path="figures/MSEs_for_densities.png"):
     plt.figure(figsize=(10, 6))
     plt.plot(k_values, mse_density_naeem, marker='o', linestyle='-', label='MSE Density Naeem')
     plt.plot(k_values, mse_weighted_density, marker='s', linestyle='-', label='MSE Weighted Density')

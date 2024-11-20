@@ -4,13 +4,13 @@ import numpy as np
 import pandas as pd
 from scipy.special import expit
 
-def generate_real(m=1000, lowrank=10, seed=41):
-    np.random.seed(seed)
+def generate_real(m=1000, lowrank=10):
+    # np.random.seed(seed)
     X = np.random.multivariate_normal(np.zeros(lowrank), np.identity(lowrank), size=m)
     X = pd.DataFrame(X, columns=[f'X_{j}' for j in range(lowrank)])
 
     # Define coefficients
-    beta = np.random.uniform(-5, 5, size=lowrank)
+    beta = np.array([5.0, -5.0, -5.0, -5.0, 5.0])
     p = expit(np.dot(X, beta))
     w = 1 / p
 
@@ -39,7 +39,7 @@ def generate_real(m=1000, lowrank=10, seed=41):
     multivariate_columns = [f'multivariate_{j}' for j in range(mean_observations.shape[1])]
     data_multi[multivariate_columns] = multivariate_normal_samples
 
-    lambda_exp = np.exp(np.abs(np.dot(X, np.array([0.2, -0.1, 0.4, -0.3, 0.1, 0.2, -0.1, 0.4, -0.3, 0.1]))))
+    lambda_exp = np.exp(np.abs(np.dot(X, np.array([0.2, -0.1, 0.4, -0.3, 0.1]))))
     exponential_samples = np.random.exponential(scale=lambda_exp)
     data_multi['exponential'] = exponential_samples
 
@@ -54,9 +54,8 @@ def generate_fake(m=1000, lowrank=10):
     Y = np.random.multivariate_normal(np.zeros(lowrank), np.identity(lowrank), size=m)
     Y = pd.DataFrame(Y, columns=[f'Y_{j}' for j in range(lowrank)])
 
-    beta = np.array([0.0, 5.0, -5.0, -5.0, -5.0, 5.0, 5.0, -5.0, -5.0, -5.0, 5.0])
-    Y_with_intercept = np.column_stack([np.ones(Y.shape[0]), Y])
-    p_star = expit(np.dot(Y_with_intercept, beta))
+    beta = np.array([5.0, -5.0, -5.0, -5.0, 5.0])
+    p_star = expit(np.dot(Y, beta))
     w_star = 1 / p_star
 
     fake_multi = Y.copy()
@@ -83,9 +82,14 @@ def generate_fake(m=1000, lowrank=10):
     multivariate_fake_columns = [f'multivariate_fake_{j}' for j in range(mean_observations_fake.shape[1])]
     fake_multi[multivariate_fake_columns] = multivariate_normal_samples_fake
 
-    lambda_exp_fake = np.exp(np.abs(np.dot(Y, np.array([0.2, -0.1, 0.4, -0.3, 0.1, 0.2, -0.1, 0.4, -0.3, 0.1]))))
+    lambda_exp_fake = np.exp(np.abs(np.dot(Y, np.array([0.2, -0.1, 0.4, -0.3, 0.1]))))
     exponential_samples_fake = np.random.exponential(scale=lambda_exp_fake)
     fake_multi['exponential_fake'] = exponential_samples_fake
+
+
+
+    Y['w_star'] = w_star
+    Y['p_star'] = p_star
 
     fake_multi['w_star'] = w_star
     fake_multi['p_star'] = p_star
