@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.special import expit  # Fonction sigmoïde
+from scipy.special import expit 
 import pandas as pd
 import matplotlib.pyplot as plt
 from prdc import compute_prdc
@@ -7,20 +7,26 @@ from scipy.stats import wishart
 import plot_graphs
 from generate_dataset import generate_real, generate_fake
 import time
-
-
-
-curr = time.time()
-
-
+from concurrent.futures import ProcessPoolExecutor
+from functools import partial
+import multiprocessing  
 
 # 1. Générer des variables explicatives 
-# seed = 41
-# np.random.seed(seed)
+seed = 41
+np.random.seed(seed)
 
 
-m = 1000
-n = 500
+
+
+
+start_time = time.time()
+
+
+
+
+
+m = 100
+n = 10
 num_runs  = 1
 num_runs_outer = 100
 
@@ -43,9 +49,14 @@ for iter in range(num_runs_outer):
     # dynamic_seed = seed + iter
     # np.random.seed(dynamic_seed)
 
+    iter_start = time.time()
+
 
     real_X, data_multi = generate_real(m=m, lowrank=lowrank)
     sampled_data = real_X.sample(n=n, weights='p') #, random_state=seed)
+
+
+    
 
     
 
@@ -57,9 +68,9 @@ for iter in range(num_runs_outer):
         # np.random.seed(sub_seed)
 
 
-
         Y, fake_data = generate_fake(m=m, lowrank = lowrank)
         sampled_data_fake = Y.sample(n=n) #, weights='p_star')
+
 
         for k in range(1, K_lim):
 
@@ -84,11 +95,13 @@ for iter in range(num_runs_outer):
             weighted_coverage_all[k].append(weighted_coverage)
             weighted_density_threshold_all[k].append(weighted_density_threshold)
 
-
+        iter_end = time.time()
+        print(f"Iteration {iter + 1} took {iter_end - iter_start:.2f} seconds")
         print(f"Dataset number {iter + 1 } run {i + 1} completed.\n")
 
 
-
+total_time = time.time() - start_time
+print(f"\nTotal execution time: {total_time:.2f} seconds ({total_time/60:.2f} minutes)")
 
 # After all runs, compute mean and variance for each metric at each k
 mean_density_Naeem = {k: np.mean(v) for k, v in density_Naeem_all.items()}
@@ -170,7 +183,7 @@ plot_graphs.plot_mse_metrics(
     mse_density_naeem,
     mse_weighted_density,
     mse_weighted_density_threshold,
-    save_path="generative-evaluation-prdc/figures/MSEs_for_densities.png"
+    save_path=f"generative-evaluation-prdc/figures/MSEs_for_densities_across_{num_runs}_Run(s)_n_=_{n},_m_=_{m},_for_{num_runs_outer}_datasets.png"
 )
 
 plot_graphs.plot_coverage_metrics(
@@ -180,6 +193,6 @@ plot_graphs.plot_coverage_metrics(
     weighted_coverage_means,
     weighted_coverage_stds,
     num_runs,
-    coverage_save_path="generative-evaluation-prdc/figures/coverage_naeem_mean_variance.png",
-    weighted_coverage_save_path="generative-evaluation-prdc/figures/weighted_coverage_mean_variance.png"
+    coverage_save_path=f"generative-evaluation-prdc/figures/coverage_naeem_mean_variance_across_{num_runs}_Run(s)_n_=_{n},_m_=_{m},_for_{num_runs_outer}_datasets.png",
+    weighted_coverage_save_path=f"generative-evaluation-prdc/figures/weighted_coverage_mean_variance_across_{num_runs}_Run(s)_n_=_{n},_m_=_{m},_for_{num_runs_outer}_datasets.png"
 )

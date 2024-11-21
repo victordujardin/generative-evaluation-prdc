@@ -12,21 +12,21 @@ def plot_density_metrics(k_values, density_naeem_means, density_naeem_stds,
     plt.fill_between(k_values,
                      np.array(density_naeem_means) - density_naeem_stds,
                      np.array(density_naeem_means) + density_naeem_stds,
-                     color='blue', alpha=0.2, label='standard deviation Density Naeem')
+                     color='blue', alpha=0.4, label='standard deviation Density Naeem')
     
     # Plot Mean Weighted Density with variance
     plt.plot(k_values, weighted_density_means, label='Mean Weighted Density', marker='x', color='red')
     plt.fill_between(k_values,
                      np.array(weighted_density_means) - weighted_density_stds,
                      np.array(weighted_density_means) + weighted_density_stds,
-                     color='red', alpha=0.2, label='standard deviation Weighted Density')
+                     color='red', alpha=0.4, label='standard deviation Weighted Density')
     
     # Plot Mean Weighted Density Threshold with variance
     plt.plot(k_values, weighted_density_threshold_means, label='Mean homogenous Weighted Density', marker='s', color='green')
     plt.fill_between(k_values,
                      np.array(weighted_density_threshold_means) - weighted_density_threshold_stds,
                      np.array(weighted_density_threshold_means) + weighted_density_threshold_stds,
-                     color='green', alpha=0.2, label='standard deviation homogenous Weighted Density')
+                     color='green', alpha=0.4, label='standard deviation homogenous Weighted Density')
     
     # Customize the plot
     plt.xlabel('k (Number of Nearest Neighbors)', fontsize=14)
