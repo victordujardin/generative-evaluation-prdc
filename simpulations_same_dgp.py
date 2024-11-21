@@ -10,6 +10,8 @@ import time
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 import multiprocessing  
+from multiprocessing import Pool
+import compute_metrics
 
 # 1. Générer des variables explicatives 
 seed = 41
@@ -28,7 +30,7 @@ start_time = time.time()
 m = 100
 n = 10
 num_runs  = 1
-num_runs_outer = 100
+num_runs_outer = 10
 
 
 K_lim = n - 1
@@ -57,10 +59,6 @@ for iter in range(num_runs_outer):
 
 
     
-
-    
-
-
 
     for i in range(num_runs):
 
@@ -103,63 +101,61 @@ for iter in range(num_runs_outer):
 total_time = time.time() - start_time
 print(f"\nTotal execution time: {total_time:.2f} seconds ({total_time/60:.2f} minutes)")
 
-# After all runs, compute mean and variance for each metric at each k
-mean_density_Naeem = {k: np.mean(v) for k, v in density_Naeem_all.items()}
-var_density_Naeem = {k: np.var(v) for k, v in density_Naeem_all.items()}
-
-mean_weighted_density = {k: np.mean(v) for k, v in weighted_density_all.items()}
-var_weighted_density = {k: np.var(v) for k, v in weighted_density_all.items()}
-
-mean_coverage = {k: np.mean(v) for k, v in coverage_all.items()}
-var_coverage = {k: np.var(v) for k, v in coverage_all.items()}
-
-mean_weighted_coverage = {k: np.mean(v) for k, v in weighted_coverage_all.items()}
-var_weighted_coverage = {k: np.var(v) for k, v in weighted_coverage_all.items()}
-
-
-mean_weighted_density_threshold = {k: np.mean(v) for k, v in weighted_density_threshold_all.items()}
-var_weighted_density_threshold = {k: np.var(v) for k, v in weighted_density_threshold_all.items()}
-
-
-
-
-# Convert means and variances to lists in the order of k_values
-density_naeem_means = [mean_density_Naeem[k] for k in k_values]
-density_naeem_vars = [var_density_Naeem[k] for k in k_values]
-
-weighted_density_means = [mean_weighted_density[k] for k in k_values]
-weighted_density_vars = [var_weighted_density[k] for k in k_values]
-
-weighted_density_threshold_means = [mean_weighted_density_threshold[k] for k in k_values]
-weighted_density_threshold_vars = [var_weighted_density_threshold[k] for k in k_values]
-
-
-mse_density_naeem = [var +(mean - 1)**2 for var, mean in zip(density_naeem_vars, density_naeem_means)]
-mse_weighted_density = [var + (mean-1)**2 for var, mean in zip(weighted_density_vars, weighted_density_means)]
-mse_weighted_density_threshold = [var + (mean-1)**2 for var, mean in zip(weighted_density_threshold_vars, weighted_density_threshold_means)]
 
 
 
 
 
 
-# Calculate standard deviations for variance regions
-density_naeem_stds = np.sqrt(density_naeem_vars)
-weighted_density_stds = np.sqrt(weighted_density_vars)
-weighted_density_threshold_stds = np.sqrt(weighted_density_threshold_vars)
 
 
 
 
 
-# Prepare coverage metrics
-coverage_means = [mean_coverage[k] for k in k_values]
-coverage_vars = [var_coverage[k] for k in k_values]
-coverage_stds = np.sqrt(coverage_vars)
 
-weighted_coverage_means = [mean_weighted_coverage[k] for k in k_values]
-weighted_coverage_vars = [var_weighted_coverage[k] for k in k_values]
-weighted_coverage_stds = np.sqrt(weighted_coverage_vars)
+
+
+# Call the function to compute metrics
+(density_naeem_means, density_naeem_stds, weighted_density_means, weighted_density_stds, 
+ weighted_density_threshold_means, weighted_density_threshold_stds, mse_density_naeem, 
+ mse_weighted_density, mse_weighted_density_threshold, coverage_means, coverage_stds, 
+ weighted_coverage_means, weighted_coverage_stds) = compute_metrics.compute_metrics(density_Naeem_all, weighted_density_all, 
+                                                                    coverage_all, weighted_coverage_all, 
+                                                                    weighted_density_threshold_all, k_values)
+
+
+
+
+
+metrics_dict = {
+    'k': k_values,
+    'density_naeem_mean': density_naeem_means,
+    'density_naeem_std': density_naeem_stds,
+    'weighted_density_mean': weighted_density_means,
+    'weighted_density_std': weighted_density_stds,
+    'weighted_density_threshold_mean': weighted_density_threshold_means,
+    'weighted_density_threshold_std': weighted_density_threshold_stds,
+    'coverage_mean': coverage_means,
+    'coverage_std': coverage_stds,
+    'weighted_coverage_mean': weighted_coverage_means,
+    'weighted_coverage_std': weighted_coverage_stds,
+    'mse_weighted_density': mse_weighted_density,
+    'mse_weighted_density_threshold': mse_weighted_density_threshold
+}
+
+# Create DataFrame
+metrics_df = pd.DataFrame(metrics_dict)
+
+# Save with parameters in filename
+filename = f'generative-evaluation-prdc/data/metrics_m{m}_n{n}_runs{num_runs}_lowrank{lowrank}.csv'
+metrics_df.to_csv(filename, index=False)
+
+
+
+
+
+
+
 
 # Now, call the plotting functions
 plot_graphs.plot_density_metrics(
