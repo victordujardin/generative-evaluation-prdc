@@ -3,6 +3,7 @@
 import numpy as np
 import pandas as pd
 from scipy.special import expit
+import random 
 
 def generate_real(m=1000, lowrank=10):
     # np.random.seed(seed)
@@ -10,7 +11,7 @@ def generate_real(m=1000, lowrank=10):
     X = pd.DataFrame(X, columns=[f'X_{j}' for j in range(lowrank)])
 
     # Define coefficients
-    beta = np.array([5.0, -5.0, -5.0, -5.0, 5.0])
+    beta = np.array([5.0, 5.0, 5.0, 5.0, 5.0])
     p = expit(np.dot(X, beta))
     w = 1 / p
 
@@ -22,9 +23,10 @@ def generate_real(m=1000, lowrank=10):
 
     # Generate additional distributions
     n_pois = 10
-    data_multi_poisson = np.random.poisson(lam=abs(data_multi['mean_X']).values[:, np.newaxis], size=(m, n_pois))
+    data_multi_poisson = np.random.poisson(lam=abs(data_multi.iloc[:, random.randint(0, lowrank-1)]).values[:, np.newaxis], size=(m, n_pois))
     poisson_columns = [f'poisson_{j}' for j in range(n_pois)]
     data_multi[poisson_columns] = data_multi_poisson
+
 
     multinomial_probs = expit(X.values)
     multinomial_probs /= multinomial_probs.sum(axis=1, keepdims=True)
@@ -54,7 +56,7 @@ def generate_fake(m=1000, lowrank=10):
     Y = np.random.multivariate_normal(np.zeros(lowrank), np.identity(lowrank), size=m)
     Y = pd.DataFrame(Y, columns=[f'Y_{j}' for j in range(lowrank)])
 
-    beta = np.array([5.0, -5.0, -5.0, -5.0, 5.0])
+    beta = np.array([-5.0, -5.0, -5.0, -5.0, -5.0])
     p_star = expit(np.dot(Y, beta))
     w_star = 1 / p_star
 
@@ -65,7 +67,7 @@ def generate_fake(m=1000, lowrank=10):
     covariance_matrix_fake = np.dot(np.dot(matrice_aleatoire_fake.T, np.cov(Y, rowvar=False)), matrice_aleatoire_fake)
 
     n_pois = 10
-    fake_multi_poisson = np.random.poisson(lam=abs(fake_multi['mean_Y']).values[:, np.newaxis], size=(m, n_pois))
+    fake_multi_poisson = np.random.poisson(lam=abs(fake_multi.iloc[:, random.randint(0, lowrank-1)]).values[:, np.newaxis], size=(m, n_pois))
     poisson_fake_columns = [f'poisson_fake_{j}' for j in range(n_pois)]
     fake_multi[poisson_fake_columns] = fake_multi_poisson
 

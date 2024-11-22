@@ -5,13 +5,14 @@ import matplotlib.pyplot as plt
 from prdc import compute_prdc
 from scipy.stats import wishart
 import plot_graphs
+import compute_metrics
 from generate_dataset import generate_real, generate_fake
 import time
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 import multiprocessing  
 from multiprocessing import Pool
-import compute_metrics
+
 
 # 1. Générer des variables explicatives 
 seed = 41
@@ -26,11 +27,10 @@ start_time = time.time()
 
 
 
-
-m = 100
-n = 10
+m = 200
+n = 150
 num_runs  = 1
-num_runs_outer = 10
+num_runs_outer = 100
 
 
 K_lim = n - 1
