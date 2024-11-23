@@ -54,10 +54,10 @@ if __name__ == "__main__":
     seed = 41
     np.random.seed(seed)
     start_time = time.time()
-    m = 10
+    m = 2000
     n = int(m  * 0.5)
     num_runs = 1
-    num_runs_outer = 100
+    num_runs_outer = 50
 
 
     K_lim = n - 1
