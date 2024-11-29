@@ -12,23 +12,34 @@ from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 import multiprocessing  
 from multiprocessing import Pool
+import sampling
 
-def run_simulation(iter, m, n, lowrank, K_lim, num_runs):
+def run_simulation(iter, m, n, lowrank, K_lim, num_runs, epsilon):
     density_Naeem_all = {k: [] for k in range(1, K_lim)}
     weighted_density_all = {k: [] for k in range(1, K_lim)}
     weighted_density_threshold_all = {k: [] for k in range(1, K_lim)}
     coverage_all = {k: [] for k in range(1, K_lim)}
     weighted_coverage_all = {k: [] for k in range(1, K_lim)}
     
-    real_X, data_multi = generate_real(m=m, lowrank=lowrank)
-    sampled_data = data_multi.sample(n=n, weights='p')
-    # sampled_data = real_X[np.random.rand(len(real_X)) < real_X['p']]
-    # print(sampled_data.shape)
+    # real_X, data_multi = generate_real(m=m, lowrank=lowrank)
+    # sampled_data = data_multi.sample(n=n, weights='p')
+
+
+    sampled_data = sampling.generate_and_sampling_real(n, lowrank, epsilon)
+
+    print(sampled_data)
+
     
     for i in range(num_runs):
-        Y, fake_data = generate_fake(m=m, lowrank=lowrank)
+        # Y, fake_data = generate_fake(m=m, lowrank=lowrank)
 
-        sampled_data_fake = fake_data.sample(n=n, weights='p_star')
+        # sampled_data_fake = fake_data.sample(n=n, weights='p_star')
+
+
+        sampled_data_fake = sampling.generate_and_sampling_fake(n, lowrank, epsilon)
+        print(sampled_data_fake)
+
+
         
         for k in range(1, K_lim):
             metrics = compute_prdc(
@@ -54,10 +65,11 @@ if __name__ == "__main__":
     seed = 41
     np.random.seed(seed)
     start_time = time.time()
-    m = 2000
-    n = int(m  * 0.5)
+    m = 400
+    n = 500
     num_runs = 1
-    num_runs_outer = 50
+    num_runs_outer = 100
+    epsilon = 2
 
 
     K_lim = n - 1
@@ -65,7 +77,7 @@ if __name__ == "__main__":
     
     with ProcessPoolExecutor() as executor:
         futures = [
-            executor.submit(run_simulation, iter, m, n, 5, K_lim, num_runs)
+            executor.submit(run_simulation, iter, m, n, 5, K_lim, num_runs, epsilon)
             for iter in range(num_runs_outer)
         ]
         
@@ -113,7 +125,7 @@ if __name__ == "__main__":
     }
     
     metrics_df = pd.DataFrame(metrics_dict)
-    filename = f'generative-evaluation-prdc/data/metrics_m{m}_n{n}_runs{num_runs}_lowrank5.csv'
+    filename = f'prdc/data/metrics_m{m}_n{n}_runs{num_runs}_lowrank5.csv'
     metrics_df.to_csv(filename, index=False)
     
     plot_graphs.plot_density_metrics(
@@ -129,7 +141,7 @@ if __name__ == "__main__":
         m,
         num_runs_outer,
         5,
-        save_path=f"generative-evaluation-prdc/figures/newdata_wstar_parallel_density_comparison_mean_variance_across_{num_runs}_Run(s)_n_{n}_m_{m}_for_{num_runs_outer}_datasets.png"
+        save_path=f"prdc/figures/newdata_wstar_parallel_density_comparison_mean_variance_across_{num_runs}_Run(s)_n_{n}_m_{m}_for_{num_runs_outer}_datasets.png"
     )
     
     plot_graphs.plot_mse_metrics(
@@ -137,7 +149,7 @@ if __name__ == "__main__":
         mse_density_naeem,
         mse_weighted_density,
         mse_weighted_density_threshold,
-        save_path=f"generative-evaluation-prdc/figures/newdata_wstar_parallel_MSEs_for_densities_across_{num_runs}_Run(s)_n_{n}_m_{m}_for_{num_runs_outer}_datasets.png"
+        save_path=f"prdc/figures/newdata_wstar_parallel_MSEs_for_densities_across_{num_runs}_Run(s)_n_{n}_m_{m}_for_{num_runs_outer}_datasets.png"
     )
     
     plot_graphs.plot_coverage_metrics(
@@ -147,6 +159,6 @@ if __name__ == "__main__":
         weighted_coverage_means,
         weighted_coverage_stds,
         num_runs,
-        coverage_save_path=f"generative-evaluation-prdc/figures/coverage_naeem_mean_variance_across_{num_runs}_Run(s)_n_{n}_m_{m}_for_{num_runs_outer}_datasets.png",
-        weighted_coverage_save_path=f"generative-evaluation-prdc/figures/weighted_coverage_mean_variance_across_{num_runs}_Run(s)_n_{n}_m_{m}_for_{num_runs_outer}_datasets.png"
-    )
+        coverage_save_path=f"prdc/figures/coverage_naeem_mean_variance_across_{num_runs}_Run(s)_n_{n}_m_{m}_for_{num_runs_outer}_datasets.png",
+        weighted_coverage_save_path=f"prdc/figures/weighted_coverage_mean_variance_across_{num_runs}_Run(s)_n_{n}_m_{m}_for_{num_runs_outer}_datasets.png"
+    ) 
