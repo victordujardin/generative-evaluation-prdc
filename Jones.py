@@ -3,6 +3,14 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 import warnings
 
+
+"""
+This code is adapted from the R code of Jones (2019) available at:
+https://github.com/TommyJones/mvrsquared
+"""
+
+
+
 def handle_y(y):
     if not isinstance(y, (np.ndarray, list)):
         raise ValueError("'y' must be a numeric vector or matrix.")

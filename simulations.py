@@ -13,20 +13,22 @@ from functools import partial
 import multiprocessing  
 from multiprocessing import Pool
 import sampling
+import Jones
 
-def run_simulation(iter, m, n, lowrank, K_lim, num_runs, epsilon):
+def run_simulation(iter, m, n, lowrank, K_lim, num_runs, epsilon, addvar,beta, beta_star):
     density_Naeem_all = {k: [] for k in range(1, K_lim)}
     weighted_density_all = {k: [] for k in range(1, K_lim)}
     weighted_density_threshold_all = {k: [] for k in range(1, K_lim)}
     coverage_all = {k: [] for k in range(1, K_lim)}
     weighted_coverage_all = {k: [] for k in range(1, K_lim)}
+    jones_list = []
     
     # real_X, data_multi = generate_real(m=m, lowrank=lowrank)
     # sampled_data = data_multi.sample(n=n, weights='p')
 
 
-    sampled_data = sampling.generate_and_sampling_real(n, lowrank, epsilon)
-
+    jones, sampled_data = sampling.generate_and_sampling_real(n, lowrank, beta, addvar, epsilon)
+    jones_list.append(jones)
     print(sampled_data)
 
     
@@ -36,7 +38,7 @@ def run_simulation(iter, m, n, lowrank, K_lim, num_runs, epsilon):
         # sampled_data_fake = fake_data.sample(n=n, weights='p_star')
 
 
-        sampled_data_fake = sampling.generate_and_sampling_fake(n, lowrank, epsilon)
+        sampled_data_fake = sampling.generate_and_sampling_fake(n, lowrank, beta_star,addvar ,epsilon)
         print(sampled_data_fake)
 
 
@@ -59,17 +61,21 @@ def run_simulation(iter, m, n, lowrank, K_lim, num_runs, epsilon):
             weighted_density_threshold_all[k].append(metrics.get('weighted_density_threshold', np.nan))
     
     print(f"Iteration {iter + 1} completed.")
-    return (density_Naeem_all, weighted_density_all, coverage_all, weighted_coverage_all, weighted_density_threshold_all)
+    return (density_Naeem_all, weighted_density_all, coverage_all, weighted_coverage_all, weighted_density_threshold_all, jones_list)
 
 if __name__ == "__main__":
     seed = 41
     np.random.seed(seed)
     start_time = time.time()
-    m = 400
-    n = 500
+    m = 250
+    n = 400
     num_runs = 1
-    num_runs_outer = 100
-    epsilon = 2
+    num_runs_outer = 48
+    epsilon = 0.1
+    addvar = True
+    lowrank = 5
+    beta = np.array([-5.0, 5.0,5.0,5.0,-5.0])#np.array([5.0] * lowrank)
+    beta_star = np.array([5.0, -5.0,-5.0,-5.0,5.0]) #np.array([-5.0] * lowrank)
 
 
     K_lim = n - 1
@@ -77,7 +83,7 @@ if __name__ == "__main__":
     
     with ProcessPoolExecutor() as executor:
         futures = [
-            executor.submit(run_simulation, iter, m, n, 5, K_lim, num_runs, epsilon)
+            executor.submit(run_simulation, iter, m, n, lowrank, K_lim, num_runs, epsilon, addvar, beta, beta_star)
             for iter in range(num_runs_outer)
         ]
         
@@ -88,6 +94,7 @@ if __name__ == "__main__":
     weighted_density_threshold_all = {k: [] for k in range(1, K_lim)}
     coverage_all = {k: [] for k in range(1, K_lim)}
     weighted_coverage_all = {k: [] for k in range(1, K_lim)}
+    jones_list = []
     
     for res in results:
         for k in range(1, K_lim):
@@ -96,6 +103,11 @@ if __name__ == "__main__":
             coverage_all[k].extend(res[2][k])
             weighted_coverage_all[k].extend(res[3][k])
             weighted_density_threshold_all[k].extend(res[4][k])
+        jones_list.extend(res[5])
+
+    if jones_list:
+        avg_jones = np.mean(jones_list)
+        print(f"Mean Jones coefficient: {avg_jones:.4f}")
     
     total_time = time.time() - start_time
     print(f"\nTotal execution time: {total_time:.2f} seconds ({total_time/60:.2f} minutes)")
@@ -141,7 +153,7 @@ if __name__ == "__main__":
         m,
         num_runs_outer,
         5,
-        save_path=f"prdc/figures/newdata_wstar_parallel_density_comparison_mean_variance_across_{num_runs}_Run(s)_n_{n}_m_{m}_for_{num_runs_outer}_datasets.png"
+        save_path=f"prdc/figures/newdata_wstar_parallel_density_comparison_mean_variance_across_{num_runs}_Run(s)_n_{n}_for_{num_runs_outer}_datasets_jones_{avg_jones}.png"
     )
     
     plot_graphs.plot_mse_metrics(
@@ -149,7 +161,7 @@ if __name__ == "__main__":
         mse_density_naeem,
         mse_weighted_density,
         mse_weighted_density_threshold,
-        save_path=f"prdc/figures/newdata_wstar_parallel_MSEs_for_densities_across_{num_runs}_Run(s)_n_{n}_m_{m}_for_{num_runs_outer}_datasets.png"
+        save_path=f"prdc/figures/newdata_wstar_parallel_MSEs_for_densities_across_{num_runs}_Run(s)_n_{n}_for_{num_runs_outer}_datasets_jones_{avg_jones}.png"
     )
     
     plot_graphs.plot_coverage_metrics(
@@ -159,6 +171,6 @@ if __name__ == "__main__":
         weighted_coverage_means,
         weighted_coverage_stds,
         num_runs,
-        coverage_save_path=f"prdc/figures/coverage_naeem_mean_variance_across_{num_runs}_Run(s)_n_{n}_m_{m}_for_{num_runs_outer}_datasets.png",
-        weighted_coverage_save_path=f"prdc/figures/weighted_coverage_mean_variance_across_{num_runs}_Run(s)_n_{n}_m_{m}_for_{num_runs_outer}_datasets.png"
+        coverage_save_path=f"prdc/figures/coverage_naeem_mean_variance_across_{num_runs}_Run(s)_n_{n}_m_{m}_for_{num_runs_outer}_datasets_jones_{avg_jones}.png",
+        weighted_coverage_save_path=f"prdc/figures/weighted_coverage_mean_variance_across_{num_runs}_Run(s)_n_{n}_m_{m}_for_{num_runs_outer}_datasets_jones_{avg_jones}.png"
     ) 

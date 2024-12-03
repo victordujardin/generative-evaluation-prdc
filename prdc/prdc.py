@@ -74,9 +74,18 @@ def compute_radius_with_weight_threshold(input_features, weights, threshold):
     
     # Compute the cumulative sum of weights for each point
     cumulative_weights = np.cumsum(sorted_weights, axis=1)
+
     
     # Create a mask where cumulative sum exceeds the threshold
     exceed_mask = cumulative_weights > threshold
+    
+
+
+    # #go one further 
+    # exceed_mask_shifted = np.roll(exceed_mask, shift=1, axis=1)
+    # exceed_mask_shifted[:, 0] = False  # Ensure the last column is False after shifting
+    # print(exceed_mask_shifted)
+
 
     # Initialize radii to the maximum distance
     radii = distances[:, -1]
@@ -210,15 +219,15 @@ def compute_prdc(real_features, fake_features, nearest_k, weights = None, weight
 
 
 
+
     if weight_threshold is not None:
         # Weighted Density
         indicator_fake_weight = (distance_real_fake <= real_radii_weight[:, np.newaxis]).astype(np.float32)
-        indicator_true_weight = (distance_real_real <= real_radii_weight[:, np.newaxis]).astype(np.float32)
+        indicator_true_weight = (distance_real_real < real_radii_weight[:, np.newaxis]).astype(np.float32)
         numerator_weight = (weights_star[ np.newaxis, : ] * indicator_fake_weight).sum()
         denominator_weight = (weights[np.newaxis, :] * indicator_true_weight).sum()
         density_update2_weight = numerator_weight / denominator_weight if denominator_weight != 0 else 0.0
         
-
 
     # indicator_fake_thresh = np.where(distance_real_fake <= np.expand_dims(real_nearest_neighbour_distances_with_threshold, axis=1), 1, 0)
     # indicator_true_thresh = np.where(distance_real_real < np.expand_dims(real_nearest_neighbour_distances_with_threshold, axis=1), 1, 0)
